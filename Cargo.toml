@@ -1,0 +1,16 @@
+[package]
+name = "corrOSion"
+version = "0.1.0"
+authors = ["⊥ team"]
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+rlibc = "0.1.4"
+
+[profile.dev]
+panic = "abort"
+
+[profile.release]
+panic = "abort"
