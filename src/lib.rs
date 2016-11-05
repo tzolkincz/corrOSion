@@ -16,19 +16,37 @@ extern crate rlibc;
 pub extern "C" fn rust_main() {
     // ATTENTION: we have a very small stack and no guard page
 
-    let hello = b"Hello World!";
-    let color_byte = 0x1f; // white foreground, blue background
 
-    let mut hello_colored = [color_byte; 24];
-    for (i, char_byte) in hello.into_iter().enumerate() {
-        hello_colored[i*2] = *char_byte;
-    }
+    easy_print_line(0, "this is my example output!", 0x1f);
 
-    // write `Hello World!` to the center of the VGA text buffer
-    let buffer_ptr = (0xb8000 + 1988) as *mut _;
-    unsafe { *buffer_ptr = hello_colored };
 
     loop {}
+}
+
+
+/**
+ * for debug purposes
+ */
+const LINE_LENGTH:usize = 80;
+pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
+
+    let mut line_colored = [color; 2 * LINE_LENGTH];
+    let mut i = 0;
+    for char_byte in line.chars() {
+        line_colored[i*2] = char_byte as u8;
+        i += 1;
+    }
+
+    //fill rest of line with spaces
+    while i < LINE_LENGTH {
+        line_colored[i*2] = ' ' as u8;
+        i += 1;
+    }
+
+    // write to the VGA text buffer
+    let buffer_ptr = (0xb8000 + 80 * 4 * line_number) as *mut _;
+    unsafe { *buffer_ptr = line_colored };
+
 }
 
 #[cfg(not(test))]
