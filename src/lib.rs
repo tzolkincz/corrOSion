@@ -8,9 +8,14 @@
 // except according to those terms.
 
 #![feature(lang_items)]
+#![feature(asm)]
 #![no_std]
 
 extern crate rlibc;
+
+mod process;
+mod programs;
+
 
 #[no_mangle]
 pub extern "C" fn rust_main() {
@@ -19,6 +24,10 @@ pub extern "C" fn rust_main() {
 
     easy_print_line(0, "this is my example output!", 0x1f);
 
+
+    process::load_apt();
+
+    easy_print_line(1, "apt created", 0x2c);
 
     loop {}
 }
@@ -44,7 +53,7 @@ pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
     }
 
     // write to the VGA text buffer
-    let buffer_ptr = (0xb8000 + 80 * 4 * line_number) as *mut _;
+    let buffer_ptr = (0xb8000 + LINE_LENGTH as i32 * 2 * line_number) as *mut _;
     unsafe { *buffer_ptr = line_colored };
 
 }
