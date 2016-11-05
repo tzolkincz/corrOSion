@@ -27,19 +27,19 @@ pub extern "C" fn rust_main() {
 /**
  * for debug purposes
  */
-const LINE_LENGTH:usize = 80;
+const LINE_LENGTH: usize = 80;
 pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
 
     let mut line_colored = [color; 2 * LINE_LENGTH];
     let mut i = 0;
     for char_byte in line.chars() {
-        line_colored[i*2] = char_byte as u8;
+        line_colored[i * 2] = char_byte as u8;
         i += 1;
     }
 
-    //fill rest of line with spaces
+    // fill rest of line with spaces
     while i < LINE_LENGTH {
-        line_colored[i*2] = ' ' as u8;
+        line_colored[i * 2] = ' ' as u8;
         i += 1;
     }
 
@@ -55,7 +55,9 @@ extern "C" fn eh_personality() {}
 
 #[cfg(not(test))]
 #[lang = "panic_fmt"]
-extern "C" fn panic_fmt() -> ! {loop{}}
+extern "C" fn panic_fmt() -> ! {
+    loop {}
+}
 
 #[allow(non_snake_case)]
 #[no_mangle]
