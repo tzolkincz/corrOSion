@@ -5,6 +5,6 @@
 
 
 #[no_mangle]
-pub fn run() -> u8 {
+pub extern "C" fn run() -> u8 {
     return 4;
 }

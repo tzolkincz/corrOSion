@@ -11,7 +11,8 @@ use core::mem;
 
 // All program table structure
 struct APTEntry {
-    start_addr: *const Fn() -> u8,
+    start_addr: usize,
+    entry_addr: extern "C" fn() -> u8,
     size: usize,
     name: &'static str, // kdyz to bude const, tak nebudeme moci zavadet programy za behu
 }
@@ -34,7 +35,7 @@ struct KernelBlock {
 
 pub fn load_apt() {
     let pr1 = APTEntry {
-        start_addr: &(program1::run),
+        entry_addr: program1::run as extern "C" fn() -> u8,
         size: 1 << 12,
         name: "program1",
     };
@@ -54,7 +55,7 @@ pub fn load_apt() {
 
 
 
-    let run1 = table[0].start_addr;
+    let run1 = table[0].entry_addr;
 
 
 
@@ -63,7 +64,7 @@ pub fn load_apt() {
 
 
 
-        let ret_code = (*run1)();
+        let ret_code = run1();
         let a = ret_code + 48; //48 is offset of numbers in ascii table
 
         // print on hardcoded VGA location
