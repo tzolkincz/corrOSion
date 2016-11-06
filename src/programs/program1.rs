@@ -5,6 +5,6 @@
 
 
 #[no_mangle]
-pub extern "C" fn run() -> u8 {
+pub extern "C" fn iddqd() -> u8 {
     return 4;
 }

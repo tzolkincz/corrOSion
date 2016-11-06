@@ -16,6 +16,7 @@ extern crate rlibc;
 mod process;
 mod programs;
 
+pub use programs::program1; //export for linker
 
 #[no_mangle]
 pub extern "C" fn rust_main() {
