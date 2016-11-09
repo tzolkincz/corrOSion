@@ -8,9 +8,9 @@ make run
 
 
 
-#### Dependencies
+## Dependencies
 
-You need to have `nasm`, `grub-mkrescue`, `xorriso`, `qemu`, and a nightly Rust compiler installed. Then you can run it using `make run`.
+You need to have `nasm`, `grub-mkrescue`, `xorriso`, `qemu`, and a nightly Rust compiler installed.
 
 On Linux, Debian like distributions use `apt`:
 ```
