@@ -23,3 +23,6 @@ Install Rust nightly. __Warning: `curl ... | sh` is insecure__, use it in some v
 curl -f -L https://static.rust-lang.org/rustup.sh -O
 sh rustup.sh --channel=nightly
 ```
+
+#### Ubuntu specific dependencies
+```apt-get install grub-pc-bin```
