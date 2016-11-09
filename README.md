@@ -20,6 +20,6 @@ apt install nasm grub-common xorriso qemu-system-x86
 Install Rust nightly. __Warning: `curl ... | sh` is insecure__, use it in some virtual machine or chroot.
 
 ```
-curl https://sh.rustup.rs -sSf | sh
-rustup override add nightly
+curl -f -L https://static.rust-lang.org/rustup.sh -O
+sh rustup.sh --channel=nightly
 ```
