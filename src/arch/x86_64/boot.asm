@@ -39,7 +39,8 @@ start:
     cli ; disable interrupts
     mov ecx, [rust_main]
     mov [task_state_segment + 0x04], ecx  ;set esp0 (ring0 stack pointer)
-    ltr [0x28]
+    mov ax, 0x2B
+    ltr ax
 
     ; Set model specific registers for sysenter/sysexit
     mov ecx, 0x174 ; writes SS to model specific registers
@@ -266,9 +267,8 @@ gdt64: ; Global Descriptor Table (64-bit).
     dq task_state_segment ; set task_state_segment (the only one)
     dw 0x89 ; limit
     dw 0x40 ; access
-    dq 0
-    dq 0
-    dq 0
+    resb 0x85
+
     .pointer:                    ; The GDT-pointer.
     dw $ - gdt64 - 1             ; Limit.
     dq gdt64                     ; Base.
