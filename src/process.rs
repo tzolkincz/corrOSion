@@ -109,12 +109,13 @@ pub fn crt0(run: extern "C" fn() -> u8) {
 
         // move function code to memory accessible from user space
         use core::ptr;
-
+        ..::easy_print_line(10, "test 1", 0x1f);
         unsafe {
-            // let program_current_address = &run as *mut i64;
-            let program_current_address: *mut i64 = mem::transmute_copy(&run);
-            ptr::copy(0x1000000 as *const i64, program_current_address, 20);
+            //let program_current_address = &run as *mut i64;
+            let program_current_address: *const i64 = mem::transmute_copy(&run);
+            ptr::copy(program_current_address, 0x1000000 as *mut i64, 20);
         };
+        ..::easy_print_line(11, "test 2", 0x1f);
 
         /*
         tůto funguje:
@@ -133,9 +134,9 @@ pub fn crt0(run: extern "C" fn() -> u8) {
 
             mov rcx, 0x800000
             mov rdx, 0x1000000
-            sysexit //tůto je problém :/
+            //sysexit //tůto je problém :/
 
-            //call rdx;
+            call rdx;
 
             "
             : "={rax}" (ret_code) // output values
