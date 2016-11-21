@@ -8,6 +8,7 @@
 ; except according to those terms.
 
 global start
+extern rust_main
 extern long_mode_start
 
 section .text
@@ -33,6 +34,31 @@ start:
     mov es, ax
 
     jmp gdt64.code:long_mode_start
+
+    ; set TSS
+    cli ; disable interrupts
+    mov ecx, [rust_main]
+    mov [task_state_segment + 0x04], ecx  ;set esp0 (ring0 stack pointer)
+    ltr [0x28]
+
+    ; Set model specific registers for sysenter/sysexit
+    mov ecx, 0x174 ; writes SS to model specific registers
+    mov edx, 0
+    mov eax, 0
+    wrmsr
+
+    mov ecx, 0x175 ; writes kernel ESP to model specific registers
+    mov edx, 0
+    mov eax, stack_top ; resets kernel stack
+    wrmsr
+
+    mov ecx, 0x176 ; writes kernel EIP to model specific registers
+    mov edx, 0
+    mov eax, [rust_main]
+    wrmsr
+
+  ;  sti ; enable interrupts
+
 
 set_up_page_tables:
     ; map first P4 entry to P3 table
@@ -178,6 +204,13 @@ set_up_SSE:
     mov al, "a"
     jmp error
 
+section .data
+; warning - zeroing data of this segment
+align 4096
+task_state_segment:
+    resb 104 ; size of TSS
+
+
 section .bss
 align 4096
 p4_table:
@@ -190,13 +223,52 @@ stack_bottom:
     resb 4096 * 32
 stack_top:
 
+
+; http://cathyreisenwitz.com/wp-content/uploads/2016/01/no.jpg
 section .rodata
-gdt64:
-    dq 0 ; zero entry
-.code: equ $ - gdt64 ; new
-    dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53) ; code segment
-.data: equ $ - gdt64 ; new
-    dq (1<<44) | (1<<47) | (1<<41) ; data segment
-.pointer:
-    dw $ - gdt64 - 1
-    dq gdt64
+gdt64: ; Global Descriptor Table (64-bit).
+    .null: equ $ - gdt64         ; The null descriptor. Kernel parameters
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 0                         ; Access.
+    db 0                         ; Granularity.
+    db 0                         ; Base (high).
+    .code: equ $ - gdt64         ; The code descriptor. Ring0 info (aka DPL)
+    dw 0                         ; Limit (low).         Descriptor Privilege Level
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10011010b                 ; Access (exec/read).
+    db 00100000b                 ; Granularity.
+    db 0                         ; Base (high).
+    .data: equ $ - gdt64         ; The data descriptor.
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10010010b                 ; Access (read/write).
+    db 00000000b                 ; Granularity.
+    db 0                         ; Base (high).
+    .code_dpl3: equ $ - gdt64         ; The code descriptor. Ring3 info
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10011010b                 ; Access (exec/read).
+    db 00101000b                 ; Granularity and Limit (hi)
+    db 00000001b                         ; Base (high).
+    .data_dpl3: equ $ - gdt64         ; The data descriptor.
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10010010b                 ; Access (read/write).
+    db 00001000b                 ; Granularity  and Limit (hi)
+    db 00000010b                         ; Base (high).
+    .tss:
+    dq task_state_segment ; set task_state_segment (the only one)
+    dw 0x89 ; limit
+    dw 0x40 ; access
+    dq 0
+    dq 0
+    dq 0
+    .pointer:                    ; The GDT-pointer.
+    dw $ - gdt64 - 1             ; Limit.
+    dq gdt64                     ; Base.

@@ -30,6 +30,13 @@ clean:
 run: $(iso)
 	@qemu-system-x86_64 -cdrom $(iso)
 
+# waits for gdb to connect
+# to connect gdb, run:     gdb "build/kernel-x86_64.bin" -ex "target remote :1234"
+debug: $(iso)
+	@qemu-system-x86_64 -cdrom $(iso) -s -S
+
+
+
 iso: $(iso)
 
 $(iso): $(kernel) $(grub_cfg)

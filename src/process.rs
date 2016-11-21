@@ -36,7 +36,7 @@ struct KernelBlock {
 pub fn load_apt() {
     let pr1 = APTEntry {
         start_addr: 0,
-        entry_addr: program1::iddqd,
+        entry_addr: program1::main,
         size: 1 << 12,
         name: "program1",
     };
@@ -49,8 +49,6 @@ pub fn load_apt() {
     // }
     //
 
-    program1::iddqd();
-
     // jak sakra deklarovat pole ve statickym scopu bez inicializace
     let table: [APTEntry; 1] = [pr1];
 
@@ -59,51 +57,99 @@ pub fn load_apt() {
     let run1 = table[0].entry_addr;
 
 
-
-    ..::easy_print_line(5, "program 1: returned value:", 0x8e);
-    unsafe {
-
-
-
-        let ret_code = run1();
-        let a = ret_code + 48; //48 is offset of numbers in ascii table
-
-        // print on hardcoded VGA location
-        let line_colored = [a, 0x4a as u8];
-        let buffer_ptr = (0xb8000 + 160 * 6) as *mut _;
-        *buffer_ptr = line_colored;
-    }
-
     crt0(run1);
 
 }
+
 
 
 #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
 pub fn crt0(run: extern "C" fn() -> u8) {
 
     let mut ret_code: u8;
+    let mut ebp_register: u64;
     unsafe {
-        //dispatch kernel
-        asm!("//mov r1, rsp;
-            //mov r2, rbp;
+        // dispatch kernel
+        //
+        // asm!("lea ecx, [kernel_entry_point]; nebo zkusit lea instrukci
+        // mov [task_state_segment + 0x04], ecx ; prepare TSS for entering ring0
+        //
+        // ltr [0x18] ; LTR - load task register, sets reference to TSS
+        //
+        //
+        // jump rax; //jump to program entry point
+        //
+        // kernel_entry_point: ; set kernel back to track
+        // "
+        // : "={rax}" (ret_code) // output values
+        // : "{rax}"(run)  //registers input registers, program entry point
+        // : "rdi" //clobbers - llvm cant use this register
+        // : "intel" //other options
+        // );
+        //
+        // asm!("
+        // ;cli #clear interrupt bit - disable
+        // ;lea ecx, [kernel_entry_point]
+        // ;mov [task_state_segment + 0x04], ecx
+        // ;ltr [0x18]
+        //
+        // ;sti # enable interrupts
+        //
+        // ;jmp [rax]
+        // ;kernel_entry_point:
+        // "
+        // : "={rax}" (ret_code) // output values
+        // : "{rax}"(run)  //registers input registers, program entry point
+        // : "rdi" //clobbers - llvm cant use this register
+        // : "intel" //other options
+        // );
+        //
 
 
-            mov rdi, rsp; call program entry point
-            call rax;
 
-        //kernel_load: ; set kernel back to track
+        // move function code to memory accessible from user space
+        use core::ptr;
+
+        unsafe {
+            // let program_current_address = &run as *mut i64;
+            let program_current_address: *mut i64 = mem::transmute_copy(&run);
+            ptr::copy(0x1000000 as *const i64, program_current_address, 20);
+        };
+
+        /*
+        tůto funguje:
+        mov rdx, 0x1000000
+        call rdx; //zavolá to překopírovanou proceduru na adrese 0x1000000
+
+
+
+        mov rcx, 0x800000
+        mov rdx, 0x1000000
+        sysexit
+
+        */
+
+        asm!("
+
+            mov rcx, 0x800000
+            mov rdx, 0x1000000
+            //sysexit //tůto je problém :/
+
+            call rdx;
 
             "
-                : "{rax}"(run)  //output registers input registers, program entry point
-                : "={rax}" (ret_code) // program return code
-                : "rdi" //clobbers - llvm cant use this register
-                : "intel" //other options
-            );
+            : "={rax}" (ret_code) // output values
+            : "{edx}"(run) //registers input registers, program entry point
+            //on sysexit epi will be set on edx value, hence should be set to program entry point
+            : "rdi" //clobbers - llvm cant use this register
+            : "intel" //other options
+        );
 
+
+        ret_code = 3;
     }
 
-    //unsafe print ret code
+    // unsafe print ret code
     unsafe {
         let a = ret_code + 48; //48 is offset of numbers in ascii table
 
