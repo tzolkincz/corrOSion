@@ -133,9 +133,9 @@ pub fn crt0(run: extern "C" fn() -> u8) {
 
             mov rcx, 0x800000
             mov rdx, 0x1000000
-            //sysexit //tůto je problém :/
+            sysexit //tůto je problém :/
 
-            call rdx;
+            //call rdx;
 
             "
             : "={rax}" (ret_code) // output values

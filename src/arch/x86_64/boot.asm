@@ -235,32 +235,32 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 0                         ; Granularity.
     db 0                         ; Base (high).
     .code: equ $ - gdt64         ; The code descriptor. Ring0 info (aka DPL)
-    dw 0                         ; Limit (low).         Descriptor Privilege Level
+    dw 0000111111111111b         ; Limit (low).         Descriptor Privilege Level
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
     db 10011010b                 ; Access (exec/read).
-    db 00100000b                 ; Granularity.
+    db 10100000b                 ; Granularity.
     db 0                         ; Base (high).
     .data: equ $ - gdt64         ; The data descriptor.
-    dw 0                         ; Limit (low).
+    dw 0000111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
     db 10010010b                 ; Access (read/write).
-    db 00000000b                 ; Granularity.
+    db 10100000b                 ; Granularity.
     db 0                         ; Base (high).
     .code_dpl3: equ $ - gdt64         ; The code descriptor. Ring3 info
-    dw 0                         ; Limit (low).
+    dw 0001111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
-    db 10011010b                 ; Access (exec/read).
-    db 00101000b                 ; Granularity and Limit (hi)
+    db 11111010b                 ; Access (exec/read).
+    db 10100000b                 ; Granularity and Limit (hi)
     db 00000001b                         ; Base (high).
     .data_dpl3: equ $ - gdt64         ; The data descriptor.
-    dw 0                         ; Limit (low).
+    dw 0010111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
-    db 10010010b                 ; Access (read/write).
-    db 00001000b                 ; Granularity  and Limit (hi)
+    db 11110010b                 ; Access (read/write).
+    db 10100000b                 ; Granularity  and Limit (hi)
     db 00000010b                         ; Base (high).
     .tss:
     dq task_state_segment ; set task_state_segment (the only one)
