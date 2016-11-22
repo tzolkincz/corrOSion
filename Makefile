@@ -29,7 +29,7 @@ clean:
 
 run: $(iso)
 #	@qemu-system-x86_64 -cdrom $(iso) -d cpu_reset 2> ./qemu.log
-	@qemu-system-x86_64 -cdrom $(iso) -monitor stdio -d int,cpu_reset 2> ./qemu.log
+	@qemu-system-x86_64 -cdrom $(iso) -no-reboot -monitor stdio -d int,cpu_reset 2> ./qemu.log
 
 # waits for gdb to connect
 # to connect gdb, run:     gdb "build/kernel-x86_64.bin" -ex "target remote :1234"
