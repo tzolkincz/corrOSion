@@ -6,23 +6,17 @@
 
 #[no_mangle]
 pub extern "C" fn main() -> u8 {
-
-
     unsafe {
-
-        let a = 5 + 48; //48 is offset of numbers in ascii table
-
-        // print on hardcoded VGA location
-        let line_colored = [a, 0x4a as u8];
-        let buffer_ptr = (0xb8000 + 160 * 7) as *mut _;
-        *buffer_ptr = line_colored;
-
+        *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x4f as u8];
 
         asm!("
         sysenter
-        nop"::::"intel", "volatile");
-    }
+        nop"::::"intel");
 
+        asm!("hlt"::::"intel");
+
+        *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x2f as u8];
+    }
 
     return 4;
 }

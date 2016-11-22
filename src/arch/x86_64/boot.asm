@@ -7,14 +7,17 @@
 ; option. This file may not be copied, modified, or distributed
 ; except according to those terms.
 
+global kstack
 global start
-extern rust_main
+
+global task_state_segment
+
 extern long_mode_start
 
 section .text
 bits 32
 start:
-    mov esp, stack_top
+    mov esp, kstack
 
     call check_multiboot
     call check_cpuid
@@ -24,6 +27,7 @@ start:
     call set_up_page_tables
     call enable_paging
     call set_up_SSE
+
 
     ; load the 64-bit GDT
     lgdt [gdt64.pointer]
@@ -35,32 +39,6 @@ start:
     mov es, ax
 
     jmp gdt64.code:long_mode_start
-
-    ; set TSS
-    cli ; disable interrupts
-    mov ecx, [rust_main]
-    mov [task_state_segment + 0x04], ecx  ;set esp0 (ring0 stack pointer)
-    mov ax, 0x2B
-    ltr ax
-
-    ; Set model specific registers for sysenter/sysexit
-    mov ecx, 0x174 ; writes SS to model specific registers
-    mov edx, 0
-    mov eax, 0x08
-    wrmsr
-
-    mov ecx, 0x175 ; writes kernel ESP to model specific registers
-    mov edx, 0
-    mov eax, stack_top ; resets kernel stack
-    wrmsr
-
-    mov ecx, 0x176 ; writes kernel EIP to model specific registers
-    mov edx, 0
-    mov eax, [rust_main]
-    wrmsr
-
-  ;  sti ; enable interrupts
-
 
 set_up_page_tables:
     ; map first P4 entry to P3 table
@@ -233,9 +211,9 @@ p3_table:
     resb 4096
 p2_table:
     resb 4096
-stack_bottom:
+kstack_max:
     resb 4096 * 32
-stack_top:
+kstack:
 
 
 ; http://cathyreisenwitz.com/wp-content/uploads/2016/01/no.jpg
