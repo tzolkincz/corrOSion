@@ -22,6 +22,32 @@ pub use programs::program1; //export for linker
 pub extern "C" fn rust_main() {
     // ATTENTION: we have a very small stack and no guard page
 
+    unsafe {
+        let rust_main_address: *const i64 = core::mem::transmute_copy(&rust_main);
+
+        // Set model specific registers for sysenter/sysexit
+        asm!("
+            cli // disable interrupts
+
+            mov ecx, 0x174 // writes KERNEL_CS to model specific registers
+            mov edx, 0
+            mov eax, 0x08
+            wrmsr
+
+            mov ecx, 0x175 // writes kernel ESP to model specific registers
+            mov edx, 0
+            mov eax, esp //here we knows the current rust_main stack
+            //(kernel stack will be reseted on sysenter)
+            wrmsr
+
+            mov ecx, 0x176 // writes kernel EIP to model specific registers
+            mov rdx, r10 //set to all 64b register
+            shr rdx, 32  //shift value to right by 32 (because edx register will be used by wrmsr)
+            mov rax, r10
+            wrmsr
+            "::"{r10}"(rust_main_address)::"volatile","intel");
+    }
+
 
     easy_print_line(0, "this is my example output!", 0x1f);
 

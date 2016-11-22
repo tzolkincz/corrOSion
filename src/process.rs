@@ -156,8 +156,9 @@ pub fn crt0(run: extern "C" fn() -> u8) {
         asm!("
             mov rcx, 0x800000
             mov rdx, 0x1000000
-        sysexit
-        call rdx
+        //sysexit
+        sysenter
+        //call rdx
 
             "
             : "={rax}" (ret_code) // output values
