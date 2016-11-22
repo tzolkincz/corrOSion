@@ -18,6 +18,7 @@ start:
 
     call check_multiboot
     call check_cpuid
+    call check_intel
     call check_long_mode
 
     call set_up_page_tables
@@ -125,7 +126,7 @@ check_multiboot:
     jne .no_multiboot
     ret
 .no_multiboot:
-    mov al, "0"
+    mov al, "m"
     jmp error
 
 ; Throw error 1 if the CPU doesn't support the CPUID command.
@@ -162,7 +163,19 @@ check_cpuid:
     je .no_cpuid
     ret
 .no_cpuid:
-    mov al, "1"
+    mov al, "c"
+    jmp error
+
+check_intel:
+    mov eax, 0
+    cpuid
+    ;mov eax, 0xaabbccdd ; shit
+    mov eax, 0x756e6547; "Genu"
+    cmp eax, ebx
+    jne .no_intel
+    ret
+.no_intel:
+    mov al, "i"
     jmp error
 
 ; Throw error 2 if the CPU doesn't support Long Mode.
@@ -180,7 +193,7 @@ check_long_mode:
     jz .no_long_mode       ; If it's not set, there is no long mode
     ret
 .no_long_mode:
-    mov al, "2"
+    mov al, "l"
     jmp error
 
 ; Check for SSE and enable it. If it's not supported throw error "a".
@@ -202,7 +215,7 @@ set_up_SSE:
 
     ret
 .no_SSE:
-    mov al, "a"
+    mov al, "s"
     jmp error
 
 section .data
