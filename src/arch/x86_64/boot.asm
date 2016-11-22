@@ -46,7 +46,7 @@ start:
     ; Set model specific registers for sysenter/sysexit
     mov ecx, 0x174 ; writes SS to model specific registers
     mov edx, 0
-    mov eax, 0
+    mov eax, 0x08
     wrmsr
 
     mov ecx, 0x175 ; writes kernel ESP to model specific registers

@@ -21,7 +21,7 @@ pub extern "C" fn main() -> u8 {
 
 
             asm!("
-            nop"::::"intel");
+            nop"::::"intel", "volatile");
         }
     }
 

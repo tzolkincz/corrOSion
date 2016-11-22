@@ -118,6 +118,25 @@ pub fn crt0(run: extern "C" fn() -> u8) {
         };
         ..::easy_print_line(11, "test 2", 0x1f);
 
+        unsafe {
+            let mut ret_code: u64;
+
+            asm!("
+                mov ecx, 0x174
+                  mov edx, 0x00
+                  mov eax, 0x08
+                  wrmsr
+                  mov ecx, 0x174
+                  rdmsr
+                ":"={eax}"(ret_code):::"volatile","intel");
+
+            let a = ret_code as u8 + 48; //48 is offset of numbers in ascii table
+
+            // print on hardcoded VGA location
+            let line_colored = [a, 0x4a as u8];
+            let buffer_ptr = (0xb8000 + 160 * 13) as *mut _;
+            *buffer_ptr = line_colored;
+        }
 
         // tůto funguje:
         // mov rdx, 0x1000000
@@ -137,7 +156,7 @@ pub fn crt0(run: extern "C" fn() -> u8) {
         asm!("
             mov rcx, 0x800000
             mov rdx, 0x1000000
-        //sysexit
+        sysexit
         call rdx
 
             "
