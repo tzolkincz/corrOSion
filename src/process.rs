@@ -105,42 +105,44 @@ pub fn crt0(run: extern "C" fn() -> u8) {
         // );
         //
 
-
+        ..::easy_print_line(4, "pred1", 0x1f);
 
         // move function code to memory accessible from user space
         use core::ptr;
         ..::easy_print_line(10, "test 1", 0x1f);
         unsafe {
-            //let program_current_address = &run as *mut i64;
+            // let program_current_address = &run as *mut i64;
             let program_current_address: *const i64 = mem::transmute_copy(&run);
+            asm!("mov rdi, 0"::::"intel");
             ptr::copy(program_current_address, 0x1000000 as *mut i64, 20);
         };
         ..::easy_print_line(11, "test 2", 0x1f);
 
-        /*
-        tůto funguje:
-        mov rdx, 0x1000000
-        call rdx; //zavolá to překopírovanou proceduru na adrese 0x1000000
 
+        // tůto funguje:
+        // mov rdx, 0x1000000
+        // call rdx; //zavolá to překopírovanou proceduru na adrese 0x1000000
+        //
+        //
+        //
+        // mov rcx, 0x800000
+        // mov rdx, 0x1000000
+        // sysexit
+        //
+        //
 
+        ..::easy_print_line(5, "pred2", 0x1f);
 
-        mov rcx, 0x800000
-        mov rdx, 0x1000000
-        sysexit
-
-        */
 
         asm!("
-
             mov rcx, 0x800000
             mov rdx, 0x1000000
-            //sysexit //tůto je problém :/
-
-            call rdx;
+        //sysexit
+        call rdx
 
             "
             : "={rax}" (ret_code) // output values
-            : "{edx}"(run) //registers input registers, program entry point
+            : "{rdx}"(run), "{rbx}"(run) //registers input registers, program entry point
             //on sysexit epi will be set on edx value, hence should be set to program entry point
             : "rdi" //clobbers - llvm cant use this register
             : "intel" //other options
@@ -149,6 +151,9 @@ pub fn crt0(run: extern "C" fn() -> u8) {
 
         ret_code = 3;
     }
+
+
+    ..::easy_print_line(6, "hu", 0x1f);
 
     // unsafe print ret code
     unsafe {

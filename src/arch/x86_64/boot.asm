@@ -249,6 +249,7 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 10010010b                 ; Access (read/write).
     db 10100000b                 ; Granularity.
     db 0                         ; Base (high).
+    ; 32bit sysexit
     .code_dpl3: equ $ - gdt64         ; The code descriptor. Ring3 info
     dw 0001111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
@@ -257,6 +258,21 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 10100000b                 ; Granularity and Limit (hi)
     db 00000001b                         ; Base (high).
     .data_dpl3: equ $ - gdt64         ; The data descriptor.
+    dw 0010111111111111b         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11110010b                 ; Access (read/write).
+    db 10100000b                 ; Granularity  and Limit (hi)
+    db 00000010b                         ; Base (high).
+    ; 64bit sysexit
+    .code_dpl3_64b: equ $ - gdt64         ; The code descriptor. Ring3 info
+    dw 0001111111111111b         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11111010b                 ; Access (exec/read).
+    db 10100000b                 ; Granularity and Limit (hi)
+    db 00000001b                         ; Base (high).
+    .data_dpl3_64b: equ $ - gdt64         ; The data descriptor.
     dw 0010111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
