@@ -52,7 +52,7 @@ pub unsafe extern "C" fn kint_zero() {
 pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
 
-    unsafe {asm!("int 0"::"{rbx}"(kint_zero as *const ())::"intel");}
+    unsafe {asm!("int 0"::::"intel");}
 
     easy_print_line(24, "kentry !", 0x2f);
     loop {}
