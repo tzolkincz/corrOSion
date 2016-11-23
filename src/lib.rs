@@ -31,12 +31,9 @@ pub unsafe extern "C" fn kint_zero() {
        push r10
        push r11
        push rdi
-       push rsi" :::: "intel");
+       push rsi" :::: "intel", "volatile");
 
-
-
-    //easy_print_line(0, "kint_zero", 0xf4); //generates additional prologue
-    print_for_kint_zero();
+    easy_print_line(0, "kint_zero", 0xf4);
 
     asm!("
        pop rsi
@@ -89,10 +86,6 @@ pub extern "C" fn kmain() {
 /**
  * for debug purposes
  */
-pub /*extern "C"*/ fn print_for_kint_zero() {
-    easy_print_line(0, "kint_zero", 0xf4);
-}
-
 const LINE_LENGTH: usize = 80;
 pub /*extern "C"*/ fn easy_print_line(line_number: i32, line: &str, color: u8) {
 
