@@ -13,6 +13,7 @@ extern kentry
 extern kmain
 extern kstack
 
+extern gdt64.kcode
 extern task_state_segment
 
 section .text
@@ -29,7 +30,7 @@ long_mode_start:
     ; Set model specific registers for sysenter/sysexit
     mov ecx, 0x174 ; writes SS to model specific registers
     mov edx, 0
-    mov eax, 0x08 ;skip null segment
+    mov eax, gdt64.kcode ;skip null segment
     wrmsr
 
     mov ecx, 0x175 ; writes kernel ESP to model specific registers

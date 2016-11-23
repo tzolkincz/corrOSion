@@ -10,7 +10,10 @@
 global kstack
 global start
 
+global gdt64.kcode
 global task_state_segment
+
+extern kint_zero
 
 extern long_mode_start
 
@@ -33,12 +36,14 @@ start:
     lgdt [gdt64.pointer]
 
     ; update selectors
-    mov ax, gdt64.data
+    mov ax, gdt64.kdata
     mov ss, ax
     mov ds, ax
     mov es, ax
 
-    jmp gdt64.code:long_mode_start
+    lidt [idt64.pointer]
+
+    jmp gdt64.kcode:long_mode_start
 
 set_up_page_tables:
     ; map first P4 entry to P3 table
@@ -226,14 +231,14 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 0                         ; Access.
     db 0                         ; Granularity.
     db 0                         ; Base (high).
-    .code: equ $ - gdt64         ; The code descriptor. Ring0 info (aka DPL)
+    .kcode: equ $ - gdt64         ; The code descriptor. Ring0 info (aka DPL)
     dw 0000111111111111b         ; Limit (low).         Descriptor Privilege Level
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
     db 10011010b                 ; Access (exec/read).
     db 10100000b                 ; Granularity.
     db 0                         ; Base (high).
-    .data: equ $ - gdt64         ; The data descriptor.
+    .kdata: equ $ - gdt64         ; The data descriptor.
     dw 0000111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
@@ -241,14 +246,14 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 10100000b                 ; Granularity.
     db 0                         ; Base (high).
     ; 32bit sysexit
-    .code_dpl3: equ $ - gdt64         ; The code descriptor. Ring3 info
+    .ucode: equ $ - gdt64         ; The code descriptor. Ring3 info
     dw 0001111111111111b         ; Limit (low).
     dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
     db 11111010b                 ; Access (exec/read).
     db 10100000b                 ; Granularity and Limit (hi)
     db 00000001b                 ; Base (high).
-    .data_dpl3: equ $ - gdt64    ; The data descriptor.
+    .udata: equ $ - gdt64    ; The data descriptor.
     dw 0001111111111111b         ; Limit (low).
     dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
@@ -256,14 +261,14 @@ gdt64: ; Global Descriptor Table (64-bit).
     db 10100000b                 ; Granularity  and Limit (hi)
     db 00000000b                 ; Base (high).
     ; 64bit sysexit
-    .code_dpl3_64b: equ $ - gdt64         ; The code descriptor. Ring3 info
+    .ucode64: equ $ - gdt64         ; The code descriptor. Ring3 info
     dw 0001111111111111b         ; Limit (low).
     dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
     db 11111010b                 ; Access (exec/read).
     db 10100000b                 ; Granularity and Limit (hi)
     db 00000001b                 ; Base (high).
-    .data_dpl3_64b: equ $ - gdt64         ; The data descriptor.
+    .udata64: equ $ - gdt64         ; The data descriptor.
     dw 0010111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
@@ -279,3 +284,19 @@ gdt64: ; Global Descriptor Table (64-bit).
     .pointer:                    ; The GDT-pointer.
     dw $ - gdt64 - 1             ; Limit.
     dq gdt64                     ; Base.
+
+idt64:
+    .kint_zero_const: equ 0x101210
+    dw idt64.kint_zero_const & 0xFFFF ; Offset (low)
+    dw gdt64.kcode ; Selector
+    db 0 ; Zero
+    db 10001110b ; Type and Attributes
+    dw idt64.kint_zero_const >> 16 & 0xFFFF; Offset (middle)
+    dq idt64.kint_zero_const >> 32 & 0xFFFF; Offset (high)
+    dq 0 ; Zero
+
+    ; and such
+
+    .pointer:
+    dw $ - idt64 - 1
+    dq idt64

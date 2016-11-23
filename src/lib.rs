@@ -7,8 +7,7 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(lang_items)]
-#![feature(asm)]
+#![feature(asm, lang_items, naked_functions)]
 #![no_std]
 
 extern crate rlibc;
@@ -19,8 +18,24 @@ mod programs;
 pub use programs::program1; //export for linker
 
 #[no_mangle]
+#[naked]
+#[cfg(target_arch = "x86_64")]  // ??? -- seen in Redox OS
+pub unsafe fn kint_zero() {
+    easy_print_line(0, "kint_zero", 0xf4);
+    unsafe {
+        asm!("hlt"::::"intel","volatile");
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
+
+    unsafe {
+        asm!("
+        //jmp rax
+        int 0"::"{rax}"(kint_zero as *const ())::"intel");
+    }
 
     easy_print_line(24, "kentry !", 0x2f);
     loop {}
