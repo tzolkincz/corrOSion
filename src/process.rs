@@ -114,15 +114,15 @@ pub fn rrt0(run: extern "C" fn() -> u8) {
         unsafe {
             // let program_current_address = &run as *mut i64;
             let program_current_address: *const i64 = mem::transmute_copy(&run);
-            ptr::copy(program_current_address, 0x1000000 as *mut i64, 20);
+            ptr::copy(program_current_address, 0xfff00f as *mut i64, 20);
         };
         ..::easy_print_line(4, "program copied", 0x1f);
 
         asm!("
-            mov rcx, 0x800000
-            mov rdx, 0x1000000
-        //sysexit
-        call rdx
+            mov rcx, 0xffff0f
+            mov rdx, 0xfff00f
+        sysexit
+        //call rdx
         //sysenter
 
             "

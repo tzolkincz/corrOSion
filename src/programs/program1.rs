@@ -10,10 +10,9 @@ pub extern "C" fn main() -> u8 {
         *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x4f as u8];
 
         asm!("
-        sysenter
-        nop"::::"intel");
-
-        asm!("hlt"::::"intel");
+            //hlt //is privileged (cant be checked we are really at CPL3)
+            sysenter
+            nop"::::"intel");
 
         *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x2f as u8];
     }

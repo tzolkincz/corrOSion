@@ -43,12 +43,12 @@ start:
 set_up_page_tables:
     ; map first P4 entry to P3 table
     mov eax, p3_table
-    or eax, 0b11 ; present + writable
+    or eax, 0b111 ; present + writable + userspace accessible
     mov [p4_table], eax
 
     ; map first P3 entry to P2 table
     mov eax, p2_table
-    or eax, 0b11 ; present + writable
+    or eax, 0b111 ; present + writable + userspace accessible
     mov [p3_table], eax
 
     ; map each P2 entry to a huge 2MiB page
@@ -57,7 +57,7 @@ set_up_page_tables:
     ; map ecx-th P2 entry to a huge page that starts at address (2MiB * ecx)
     mov eax, 0x200000  ; 2MiB
     mul ecx            ; start address of ecx-th page
-    or eax, 0b10000011 ; present + writable + huge
+    or eax, 0b10000111 ; present + writable + huge + userspace accessible
     mov [p2_table + ecx * 8], eax ; map ecx-th entry
 
     inc ecx            ; increase counter
@@ -243,33 +243,33 @@ gdt64: ; Global Descriptor Table (64-bit).
     ; 32bit sysexit
     .code_dpl3: equ $ - gdt64         ; The code descriptor. Ring3 info
     dw 0001111111111111b         ; Limit (low).
-    dw 0                         ; Base (low).
+    dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
     db 11111010b                 ; Access (exec/read).
     db 10100000b                 ; Granularity and Limit (hi)
-    db 00000001b                         ; Base (high).
-    .data_dpl3: equ $ - gdt64         ; The data descriptor.
-    dw 0010111111111111b         ; Limit (low).
-    dw 0                         ; Base (low).
+    db 00000001b                 ; Base (high).
+    .data_dpl3: equ $ - gdt64    ; The data descriptor.
+    dw 0001111111111111b         ; Limit (low).
+    dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
     db 11110010b                 ; Access (read/write).
     db 10100000b                 ; Granularity  and Limit (hi)
-    db 00000010b                         ; Base (high).
+    db 00000000b                 ; Base (high).
     ; 64bit sysexit
     .code_dpl3_64b: equ $ - gdt64         ; The code descriptor. Ring3 info
     dw 0001111111111111b         ; Limit (low).
-    dw 0                         ; Base (low).
+    dw 0000111111111111b         ; Base (low).
     db 0                         ; Base (middle)
     db 11111010b                 ; Access (exec/read).
     db 10100000b                 ; Granularity and Limit (hi)
-    db 00000001b                         ; Base (high).
+    db 00000001b                 ; Base (high).
     .data_dpl3_64b: equ $ - gdt64         ; The data descriptor.
     dw 0010111111111111b         ; Limit (low).
     dw 0                         ; Base (low).
     db 0                         ; Base (middle)
     db 11110010b                 ; Access (read/write).
     db 10100000b                 ; Granularity  and Limit (hi)
-    db 00000010b                         ; Base (high).
+    db 00000010b                 ; Base (high).
     .tss:
     dq task_state_segment ; set task_state_segment (the only one)
     dw 0x89 ; limit
