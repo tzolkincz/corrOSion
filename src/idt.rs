@@ -57,8 +57,4 @@ impl IdtEntry {
         self.offsetm = (base >> 16) as u16;
         self.offseth = (base >> 32) as u32;
     }
-
-    pub fn set_func(&mut self, selector: u16, func: unsafe extern fn()) {
-        self.set_offset(selector, func as usize);
-    }
 }

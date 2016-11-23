@@ -22,7 +22,8 @@ pub use programs::program1; //export for linker
 #[naked]
 #[cfg(target_arch = "x86_64")]  // ??? -- seen in Redox OS
 pub unsafe extern "C" fn kint_zero() {
-    asm!("push rax
+    asm!("
+       push rax
        push rcx
        push rdx
        push r8
@@ -30,10 +31,14 @@ pub unsafe extern "C" fn kint_zero() {
        push r10
        push r11
        push rdi
-       push rsi
+       push rsi" :::: "intel");
 
-       call print_for_kint_zero
 
+
+    //easy_print_line(0, "kint_zero", 0xf4); //generates additional prologue
+    print_for_kint_zero();
+
+    asm!("
        pop rsi
        pop rdi
        pop r11
@@ -42,10 +47,9 @@ pub unsafe extern "C" fn kint_zero() {
        pop r8
        pop rdx
        pop rcx
-       pop rax
+       pop rax" :::: "intel");
 
-       //hlt
-       iretq" :::: "intel", "volatile");
+    asm!("iretq" :::: "intel");
 }
 
 #[no_mangle]
@@ -67,7 +71,7 @@ pub extern "C" fn kmain() {
         let mut gdt64_kcode: u64;
         asm!("mov ecx, 0x174 \n rdmsr" : "={eax}"(gdt64_kcode) ::: "intel");
 
-        idt::IDT[0].set_func(gdt64_kcode as u16, kint_zero);
+        idt::IDT[0].set_offset(gdt64_kcode as u16, kint_zero as usize);
         idt::IDT[0].set_flags(0b10001110);
         idt::IDTR.set_slice(&idt::IDT);
         idt::IDTR.load();
@@ -85,13 +89,12 @@ pub extern "C" fn kmain() {
 /**
  * for debug purposes
  */
-#[no_mangle]
-pub extern "C" fn print_for_kint_zero() {
+pub /*extern "C"*/ fn print_for_kint_zero() {
     easy_print_line(0, "kint_zero", 0xf4);
 }
 
 const LINE_LENGTH: usize = 80;
-pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
+pub /*extern "C"*/ fn easy_print_line(line_number: i32, line: &str, color: u8) {
 
     let mut line_colored = [color; 2 * LINE_LENGTH];
     let mut i = 0;
