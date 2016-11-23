@@ -292,7 +292,7 @@ idt64:
     db 0 ; Zero
     db 10001110b ; Type and Attributes
     dw idt64.kint_zero_const >> 16 & 0xFFFF; Offset (middle)
-    dq idt64.kint_zero_const >> 32 & 0xFFFF; Offset (high)
+    dq idt64.kint_zero_const >> 32 & 0xFFFFFFFF; Offset (high)
     dq 0 ; Zero
 
     ; and such
