@@ -13,7 +13,7 @@ global start
 global gdt64.kcode
 global task_state_segment
 
-extern kint_zero
+;extern kint_zero
 
 extern long_mode_start
 
@@ -41,7 +41,7 @@ start:
     mov ds, ax
     mov es, ax
 
-    lidt [idt64.pointer]
+    ;lidt [idt64.pointer]
 
     jmp gdt64.kcode:long_mode_start
 
@@ -285,18 +285,18 @@ gdt64: ; Global Descriptor Table (64-bit).
     dw $ - gdt64 - 1             ; Limit.
     dq gdt64                     ; Base.
 
-idt64:
-    .kint_zero_const: equ 0x101210
-    dw idt64.kint_zero_const & 0xFFFF ; Offset (low)
-    dw gdt64.kcode ; Selector
-    db 0 ; Zero
-    db 10001110b ; Type and Attributes
-    dw idt64.kint_zero_const >> 16 & 0xFFFF; Offset (middle)
-    dq idt64.kint_zero_const >> 32 & 0xFFFFFFFF; Offset (high)
-    dq 0 ; Zero
-
-    ; and such
-
-    .pointer:
-    dw $ - idt64 - 1
-    dq idt64
+;idt64:
+;    .kint_zero_const: equ 0x101210
+;    dw idt64.kint_zero_const & 0xFFFF ; Offset (low)
+;    dw gdt64.kcode ; Selector
+;    db 0 ; Zero
+;    db 10001110b ; Type and Attributes
+;    dw idt64.kint_zero_const >> 16 & 0xFFFF; Offset (middle)
+;    dq idt64.kint_zero_const >> 32 & 0xFFFFFFFF; Offset (high)
+;    dq 0 ; Zero
+;
+;    ; and such
+;
+;    .pointer:
+;    dw $ - idt64 - 1
+;    dq idt64

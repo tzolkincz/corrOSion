@@ -110,12 +110,8 @@ pub fn rrt0(run: extern "C" fn() -> u8) {
 
         // move function code to memory accessible from user space
         use core::ptr;
-
-        unsafe {
-            // let program_current_address = &run as *mut i64;
-            let program_current_address: *const i64 = mem::transmute_copy(&run);
-            ptr::copy(program_current_address, 0xfff00f as *mut i64, 20);
-        };
+        let program_current_address: *const i64 = mem::transmute_copy(&run);
+        ptr::copy(program_current_address, 0xfff00f as *mut i64, 20);
         ..::easy_print_line(4, "program copied", 0x1f);
 
         asm!("

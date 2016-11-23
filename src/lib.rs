@@ -12,6 +12,7 @@
 
 extern crate rlibc;
 
+mod idt;
 mod process;
 mod programs;
 
@@ -20,22 +21,38 @@ pub use programs::program1; //export for linker
 #[no_mangle]
 #[naked]
 #[cfg(target_arch = "x86_64")]  // ??? -- seen in Redox OS
-pub unsafe fn kint_zero() {
-    easy_print_line(0, "kint_zero", 0xf4);
-    unsafe {
-        asm!("hlt"::::"intel","volatile");
-    }
+pub unsafe extern "C" fn kint_zero() {
+    asm!("push rax
+       push rcx
+       push rdx
+       push r8
+       push r9
+       push r10
+       push r11
+       push rdi
+       push rsi
+
+       call print_for_kint_zero
+
+       pop rsi
+       pop rdi
+       pop r11
+       pop r10
+       pop r9
+       pop r8
+       pop rdx
+       pop rcx
+       pop rax
+
+       //hlt
+       iretq" :::: "intel", "volatile");
 }
 
 #[no_mangle]
 pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
 
-    unsafe {
-        asm!("
-        //jmp rax
-        int 0"::"{rax}"(kint_zero as *const ())::"intel");
-    }
+    unsafe {asm!("int 0"::"{rbx}"(kint_zero as *const ())::"intel");}
 
     easy_print_line(24, "kentry !", 0x2f);
     loop {}
@@ -47,14 +64,15 @@ pub extern "C" fn kmain() {
     easy_print_line(0, "kmain .", 0x4f);
 
     unsafe {
-        let mut ret_code: u64;
+        let mut gdt64_kcode: u64;
+        asm!("mov ecx, 0x174 \n rdmsr" : "={eax}"(gdt64_kcode) ::: "intel");
 
-        asm!("
-              mov ecx, 0x174
-              rdmsr
-            ":"={eax}"(ret_code):::"intel");
+        idt::IDT[0].set_func(gdt64_kcode as u16, kint_zero);
+        idt::IDT[0].set_flags(0b10001110);
+        idt::IDTR.set_slice(&idt::IDT);
+        idt::IDTR.load();
 
-        *((0xb8000 + 160 * 1) as *mut _) = [ret_code as u8 + '0' as u8, 0x1f as u8];
+        *((0xb8000 + 160 * 1) as *mut _) = [gdt64_kcode as u8 + '0' as u8, 0x1f as u8];
     }
 
     process::load_apt();
@@ -67,6 +85,11 @@ pub extern "C" fn kmain() {
 /**
  * for debug purposes
  */
+#[no_mangle]
+pub extern "C" fn print_for_kint_zero() {
+    easy_print_line(0, "kint_zero", 0xf4);
+}
+
 const LINE_LENGTH: usize = 80;
 pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
 
