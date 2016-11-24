@@ -15,6 +15,7 @@ extern crate rlibc;
 mod idt;
 mod process;
 mod programs;
+mod memory;
 
 pub use programs::program1; //export for linker
 
@@ -77,6 +78,8 @@ pub extern "C" fn kmain() {
     }
 
     process::load_apt();
+    process::create_prcess(0);
+    process::dispatch_process(0);
 
     easy_print_line(0, "kmain !", 0x2f);
     loop {}
