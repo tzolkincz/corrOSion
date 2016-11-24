@@ -15,6 +15,7 @@ extern crate rlibc;
 
 mod process;
 mod programs;
+mod memory;
 
 pub use programs::program1; //export for linker
 
@@ -31,18 +32,9 @@ pub extern "C" fn kmain() {
     // ATTENTION: we have a very small stack and no guard page
     easy_print_line(0, "kmain .", 0x4f);
 
-    unsafe {
-        let mut ret_code: u64;
-
-        asm!("
-              mov ecx, 0x174
-              rdmsr
-            ":"={eax}"(ret_code):::"intel");
-
-        *((0xb8000 + 160 * 1) as *mut _) = [ret_code as u8 + '0' as u8, 0x1f as u8];
-    }
-
     process::load_apt();
+    process::create_prcess(0);
+    process::dispatch_process(0);
 
     easy_print_line(0, "kmain !", 0x2f);
     loop {}

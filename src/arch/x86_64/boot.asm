@@ -80,6 +80,7 @@ enable_paging:
     mov ecx, 0xC0000080
     rdmsr
     or eax, 1 << 8
+    btr eax, 11; disable NX (EFER_NX) // btr = bit test and reset
     wrmsr
 
     ; enable paging in the cr0 register
@@ -210,6 +211,12 @@ p4_table:
 p3_table:
     resb 4096
 p2_table:
+    resb 4096
+process1_mpl4_table: ; define statically because of mem align req.
+    resb 4096
+process1_pdp_table: ; define statically because of mem align req.
+    resb 4096
+process1_pd_table: ; define statically because of mem align req.
     resb 4096
 kstack_max:
     resb 4096 * 32

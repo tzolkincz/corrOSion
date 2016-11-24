@@ -1,144 +1,147 @@
 
-
 // process manager
 
-
-
 use programs::program1;
-
+use memory;
 
 use core::mem;
+use core::ptr;
 
 // All program table structure
 struct APTEntry {
+    pid: u32,
     start_addr: usize,
     entry_addr: extern "C" fn() -> u8,
     size: usize,
-    name: &'static str, // kdyz to bude static, tak nebudeme moci zavadet programy za behu
+    name: [char; 10],
 }
 
 
 struct PCB {
-    pid: i32,
+    pid: u32,
     // registers
     ebp: u64,
     esp: u64,
-    last_alloc_page: u64, // jak adresovat stranky?
+    eip: u64,
+    last_alloc_page: u64, // page 0 is invalid, page 1 is stack, page 2 is program code
+    page_table_addr: u64,
 }
 
 struct KernelBlock {
     ebp: u64, // esp: u64, //not needed - stays in esp0 register
 }
 
+//@TODO pořešit to líp
+// have to be initialized on compile time
+static APT: [APTEntry; 3] = [APTEntry {
+                                 pid: 0,
+                                 start_addr: 0,
+                                 entry_addr: program1::main,
+                                 size: 0,
+                                 name: ['0'; 10],
+                             },
+                             APTEntry {
+                                 pid: 0,
+                                 start_addr: 0,
+                                 entry_addr: program1::main,
+                                 size: 0,
+                                 name: ['0'; 10],
+                             },
+                             APTEntry {
+                                 pid: 0,
+                                 start_addr: 0,
+                                 entry_addr: program1::main,
+                                 size: 0,
+                                 name: ['0'; 10],
+                             }];
 
-
+static PCBs: [PCB; 3] = [PCB {
+                             pid: 0,
+                             ebp: 2 * 0x200000,
+                             esp: 2 * 0x200000,
+                             eip: 2 * 0x200000,
+                             page_table_addr: 10,
+                             last_alloc_page: 2,
+                         },
+                         PCB {
+                             pid: 0,
+                             ebp: 2 * 0x200000,
+                             esp: 2 * 0x200000,
+                             eip: 2 * 0x200000,
+                             page_table_addr: 10,
+                             last_alloc_page: 2,
+                         },
+                         PCB {
+                             pid: 0,
+                             ebp: 2 * 0x200000,
+                             esp: 2 * 0x200000,
+                             eip: 2 * 0x200000,
+                             page_table_addr: 0,
+                             last_alloc_page: 2,
+                         }];
 
 pub fn load_apt() {
     ..::easy_print_line(2, "load_apt .", 0x4f);
     let pr1 = APTEntry {
+        pid: 0,
         start_addr: 0,
         entry_addr: program1::main,
         size: 1 << 12,
-        name: "program1",
+        name: ['p', 'r', '0', 'g', 'r', 'a', 'm', '1', ' ', ' '],
     };
 
-    // crt0 procedure
-
-    // na tuto mi rust hlasi, ze to neni volany v unsafe :/
-    // unsafe {
-    // static table2: [APTEntry; 1] = mem::uninitialized();
-    // }
-    //
-
-    // jak sakra deklarovat pole ve statickym scopu bez inicializace
-    let table: [APTEntry; 1] = [pr1];
-
-
-
-    let run1 = table[0].entry_addr;
-
-
-    rrt0(run1);
+    unsafe {
+        //    let apt_ref: &mut [APTEntry] = mem::transmute_copy(&APT);
+        let apt_ref: &mut APTEntry = mem::transmute_copy(&APT[0]);
+        // apt_ref[0] = pr1;
+        ptr::copy(&pr1, apt_ref, 1);
+    }
 
     ..::easy_print_line(2, "load_apt !", 0x2f);
 }
 
 
-
-#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-pub fn rrt0(run: extern "C" fn() -> u8) {
-    ..::easy_print_line(3, "rrt0 .", 0x4f);
-
-    let mut ret_code: u8;
-    let mut ebp_register: u64;
+pub fn create_prcess(id: u32) {
     unsafe {
-        // dispatch kernel
-        //
-        // asm!("lea ecx, [kernel_entry_point]; nebo zkusit lea instrukci
-        // mov [task_state_segment + 0x04], ecx ; prepare TSS for entering ring0
-        //
-        // ltr [0x18] ; LTR - load task register, sets reference to TSS
-        //
-        //
-        // jump rax; //jump to program entry point
-        //
-        // kernel_entry_point: ; set kernel back to track
-        // "
-        // : "={rax}" (ret_code) // output values
-        // : "{rax}"(run)  //registers input registers, program entry point
-        // : "rdi" //clobbers - llvm cant use this register
-        // : "intel" //other options
-        // );
-        //
-        // asm!("
-        // ;cli #clear interrupt bit - disable
-        // ;lea ecx, [kernel_entry_point]
-        // ;mov [task_state_segment + 0x04], ecx
-        // ;ltr [0x18]
-        //
-        // ;sti # enable interrupts
-        //
-        // ;jmp [rax]
-        // ;kernel_entry_point:
-        // "
-        // : "={rax}" (ret_code) // output values
-        // : "{rax}"(run)  //registers input registers, program entry point
-        // : "rdi" //clobbers - llvm cant use this register
-        // : "intel" //other options
-        // );
-        //
+        let pcbs_ref: &mut [PCB] = mem::transmute_copy(&PCBs);
 
-        // move function code to memory accessible from user space
-        use core::ptr;
+        let super_dir = memory::init_super_dir_table(id);
 
-        unsafe {
-            // let program_current_address = &run as *mut i64;
-            let program_current_address: *const i64 = mem::transmute_copy(&run);
-            ptr::copy(program_current_address, 0xfff00f as *mut i64, 20);
-        };
-        ..::easy_print_line(4, "program copied", 0x1f);
+        pcbs_ref[id as usize].pid = id;
+        pcbs_ref[id as usize].ebp = 33 * 0x200000;
+        pcbs_ref[id as usize].esp = 33 * 0x200000;
+        pcbs_ref[id as usize].eip = 33 * 0x200000;
+        pcbs_ref[id as usize].page_table_addr = super_dir;
+        pcbs_ref[id as usize].last_alloc_page = 2;
+    }
+
+    // move program code to memory accessible from user space
+    unsafe {
+        let program_current_addr: *const u64 = mem::transmute_copy(&APT[id as usize].entry_addr);
+        let program_destination_addr = memory::get_program_code_fa(id) as *mut u64;
+        ptr::copy(program_current_addr, program_destination_addr, 20);
+    };
+}
+
+
+pub fn dispatch_process(pid: u32) {
+    unsafe {
+        // WTF? pt shout equal pt2
+        // let pt = PCBs[pid as usize].page_table_addr;
+        let pt2 = memory::get_program_dir_table_addr(pid);
 
         asm!("
-            mov rcx, 0xffff0f
-            mov rdx, 0xfff00f
-        sysexit
-        //call rdx
-        //sysenter
-
+            mov cr3, rax //set page table addr   <------- TU TO PADÁ
+            sysexit
             "
-            : "={rax}" (ret_code) // output values
-            : "{rdx}"(run) //registers input registers, program entry point
-            //on sysexit epi will be set on edx value, hence should be set to program entry point
-            : "rdi" //clobbers - llvm cant use this register
-            : "intel" //other options
+            :
+            :
+        // registers input registers, program entry point
+             "{rcx}"(PCBs[pid as usize].esp),
+             "{rdx}"(PCBs[pid as usize].eip),
+             "{rax}"(pt2)
+            :
+            : "intel", "volatile"
         );
-
-        ret_code = 3;
     }
-
-    unsafe {
-        *((0xb8000 + 160 * 5) as *mut _) = [ret_code as u8 + '0' as u8, 0x1f as u8];
-    }
-
-    ..::easy_print_line(3, "rrt0 !", 0x2f);
 }
