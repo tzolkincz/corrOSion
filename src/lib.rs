@@ -23,6 +23,16 @@ pub use programs::program1; //export for linker
 pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
 
+    process::dispatch_off();
+    unsafe {
+        asm!("
+            mov r10, 0xff0fff // test register preservation
+            "
+            ::
+            :: "intel", "volatile"
+        );}
+    process::dispatch_on(0);
+
     easy_print_line(24, "kentry !", 0x2f);
     loop {}
 }
@@ -34,7 +44,7 @@ pub extern "C" fn kmain() {
 
     process::load_apt();
     process::create_prcess(0);
-    process::dispatch_process(0);
+    process::dispatch_on(0);
 
     easy_print_line(0, "kmain !", 0x2f);
     loop {}
