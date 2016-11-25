@@ -105,7 +105,14 @@ pub fn create_prcess(id: u32) {
 
 
 pub fn dispatch_on(pid: u32) {
+
     unsafe {
+        if PCBS[pid as usize].eip == 0 {
+            // uninicialized process
+            ..::easy_print_line(1, "Cant dispatch uninicialized process", 0x4f);
+            loop {}
+        }
+
         KCB.current_process = pid;
         KCB.page_table_addr = memory::get_current_page_table_addr();
 
@@ -175,7 +182,12 @@ pub fn dispatch_on(pid: u32) {
 // -------------------------------------
 #[inline(always)]
 pub fn dispatch_off() {
+
     unsafe {
+        if KCB.current_process == NO_PROCESS_RUNNING {
+            return;
+        }
+
         asm!("
             add r14, 2 //set program instruction pointer to next instruction
 
@@ -213,4 +225,14 @@ pub fn dispatch_off() {
         KCB.current_process = NO_PROCESS_RUNNING;
     }
 
+}
+
+pub fn terminate(pid: u32) {
+    unsafe {
+        PCBS[pid as usize].ebp = 0;
+        PCBS[pid as usize].esp = 0;
+        PCBS[pid as usize].eip = 0;
+        PCBS[pid as usize].page_table_addr = 0;
+        PCBS[pid as usize].last_alloc_page = 0;
+    }
 }
