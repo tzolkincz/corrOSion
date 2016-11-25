@@ -38,7 +38,7 @@ pub fn alloc(pid: u32) -> u64 {
     }
 }
 
-pub fn get_program_code_fa(pid: u32) -> u64 {
+pub fn get_program_code_va() -> u64 {
     // program starts on 66MB linear address
     return (KERNEL_PAGES_COUNT + 1) * PAGE_SIZE;
 }
@@ -77,12 +77,17 @@ pub fn init_super_dir_table(pid: u32) -> u64 {
         }
 
 
+        let mut code_addr: u64 = 0;
         // alloc two pages (stack and program init code)
         for i in 32..34 {
+            code_addr = allocate_page();
             let offset = (i * mem::size_of::<u64>()) as u64;
             ptr::write((2 * 4096 + start_addr + offset) as *mut u64,
-                       allocate_page() | ALLOCATED_MASK);
+                       code_addr | ALLOCATED_MASK);
         }
+
+        // set program start Physical address
+        process::PCBS[pid as usize].code_physical_addr = code_addr;
 
         // map rest pages as not present
         for i in 34..512 {

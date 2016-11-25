@@ -3,8 +3,6 @@
 #[no_mangle]
 pub extern "C" fn main() -> u8 {
     unsafe {
-        // *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x4f as u8];
-
         asm!("
             mov r10, 0x12345 //test register preservation
 
@@ -21,9 +19,38 @@ pub extern "C" fn main() -> u8 {
 
             mov eax, 0x001
             mov [r13], eax //test memory allocation
+
+
+            //alloc more memory
+            mov r13, 0x01   //syscall number (1 - alloc)
+            mov r15, rsp    //pass stack pointer to OS
+            lea r14, [rip]  //pass instruction pointer to OS
+            sysenter
+            mov [r13], eax //test memory allocation
+
+
+            //pause process
+            mov r13, 0x03   //syscall number (3 - pause)
+            mov r15, rsp    //pass stack pointer to OS
+            lea r14, [rip]  //pass instruction pointer to OS
+            sysenter
+
+
+            //pause process
+            mov r13, 0x03   //syscall number (3 - pause)
+            mov r15, rsp    //pass stack pointer to OS
+            lea r14, [rip]  //pass instruction pointer to OS
+            sysenter
+
+            //terminate process
+            mov r13, 0x02   //syscall number (2 - terminate)
+            mov r15, rsp    //pass stack pointer to OS
+            lea r14, [rip]  //pass instruction pointer to OS
+            sysenter
+
+            hlt //this will be never called
             "::::"intel", "volatile");
 
-        // *((0xb8000 + 160 * 6) as *mut _) = ['P' as u8, 0x2f as u8];
     }
 
     loop {

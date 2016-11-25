@@ -17,8 +17,10 @@ mod process;
 mod programs;
 mod memory;
 mod syscall;
+mod scheduler;
 
 pub use programs::program1; //export for linker
+pub use programs::program2; //export for linker
 
 #[no_mangle]
 #[naked]
@@ -56,14 +58,14 @@ pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
 
 
-//    unsafe {asm!("int 0"::::"intel");}
+    //    unsafe {asm!("int 0"::::"intel");}
 
     let pid = process::dispatch_off();
     syscall::handle_syscall(pid);
 
 
-    //easy_print_line(24, "kentry !", 0x2f);
-    //loop {}
+    // easy_print_line(24, "kentry !", 0x2f);
+    // loop {}
 }
 
 #[no_mangle]
@@ -85,7 +87,9 @@ pub extern "C" fn kmain() {
 
     process::load_apt();
     process::create_prcess(0);
-    process::dispatch_on(0);
+    process::create_prcess(1);
+    scheduler::reschedule();
+
 
     easy_print_line(0, "kmain !", 0x2f);
     loop {}
@@ -96,7 +100,7 @@ pub extern "C" fn kmain() {
  * for debug purposes
  */
 const LINE_LENGTH: usize = 80;
-pub /*extern "C"*/ fn easy_print_line(line_number: i32, line: &str, color: u8) {
+pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
 
     let mut line_colored = [color; 2 * LINE_LENGTH];
     let mut i = 0;
