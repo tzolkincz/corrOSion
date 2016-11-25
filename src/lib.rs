@@ -16,6 +16,7 @@ mod idt;
 mod process;
 mod programs;
 mod memory;
+mod syscall;
 
 pub use programs::program1; //export for linker
 
@@ -55,20 +56,14 @@ pub extern "C" fn kentry() {
     easy_print_line(24, "kentry .", 0x4f);
 
 
-    unsafe {asm!("int 0"::::"intel");}
+//    unsafe {asm!("int 0"::::"intel");}
 
-    process::dispatch_off();
-    unsafe {
-        asm!("
-            mov r10, 0xff0fff // test register preservation
-            "
-            ::
-            :: "intel", "volatile"
-        );}
-    process::dispatch_on(0);
+    let pid = process::dispatch_off();
+    syscall::handle_syscall(pid);
 
-    easy_print_line(24, "kentry !", 0x2f);
-    loop {}
+
+    //easy_print_line(24, "kentry !", 0x2f);
+    //loop {}
 }
 
 #[no_mangle]

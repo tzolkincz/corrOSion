@@ -23,13 +23,13 @@ struct APTEntry {
 
 #[derive(Copy, Clone, Debug)]
 #[repr(packed)]
-struct PCB {
+pub struct PCB {
     pid: u32,
     // registers
     ebp: u64,
     esp: u64,
     eip: u64,
-    last_alloc_page: u64, // page 1 is stack, page 2 is program code
+    pub last_alloc_page: u64, // page 1 is stack, page 2 is program code
     page_table_addr: u64,
 }
 
@@ -54,7 +54,7 @@ static mut APT: [APTEntry; 3] = [APTEntry {
     name: ['0'; 10],
 }; 3];
 
-static mut PCBS: [PCB; 3] = [PCB {
+pub static mut PCBS: [PCB; 3] = [PCB {
     pid: 0,
     ebp: 0,
     esp: 0,
@@ -103,7 +103,8 @@ pub fn create_prcess(id: u32) {
 
 }
 
-
+#[no_mangle]
+#[inline(always)]
 pub fn dispatch_on(pid: u32) {
 
     unsafe {
@@ -150,13 +151,11 @@ pub fn dispatch_on(pid: u32) {
                 pop r10
                 pop r11
                 pop r12
-                pop r13
-                pop r14
-                pop r15
+                //pop r13 //not preserved, used for syscalls
+                //pop r14
+                //pop r15
 
-                "
-                :
-                :
+                " ::
                 "{ecx}"(PCBS[pid as usize].esp),
                 "{ebp}"(PCBS[pid as usize].ebp)
                 :: "intel", "volatile"
@@ -165,7 +164,7 @@ pub fn dispatch_on(pid: u32) {
 
 
         asm!("
-
+        //hlt
             sysexit" ::
         // registers input registers, program entry point
              "{rcx}"(PCBS[pid as usize].esp),
@@ -180,23 +179,26 @@ pub fn dispatch_on(pid: u32) {
 // r15 = program stack pointer
 // r14 = program instruction pointer
 // -------------------------------------
+#[no_mangle]
 #[inline(always)]
-pub fn dispatch_off() {
+pub fn dispatch_off() -> u32 {
 
     unsafe {
         if KCB.current_process == NO_PROCESS_RUNNING {
-            return;
+            ..::easy_print_line(1, "Cant dispatch off E:No process is running", 0x4f);
+            loop {}
         }
 
         asm!("
             add r14, 2 //set program instruction pointer to next instruction
 
-            mov rax, rsp //save kernel stack pointer
+
+            mov rcx, rsp //save kernel stack pointer
             mov rsp, r15
 
-            push r15
-            push r14
-            push r13
+            //push r15  //not preserved, used for syscalls
+            //push r14
+            //push r13
             push r12
             push r11
             push r10
@@ -207,9 +209,8 @@ pub fn dispatch_off() {
             push rbp
 
             mov r15, rsp
-            mov rsp, rax //set back kernel pointer
+            mov rsp, rcx //set back kernel pointer
             mov cr3, rdx //set kernel page table
-
             "
             :
             "={r14}"(PCBS[KCB.current_process as usize].eip),
@@ -217,12 +218,14 @@ pub fn dispatch_off() {
             :
             "{rdx}"(KCB.page_table_addr)
             :
-            "rax", "r14", "r15"
+            "rcx", "r14", "r15"
             :
              "intel", "volatile"
         );
 
+        let old_pid = KCB.current_process;
         KCB.current_process = NO_PROCESS_RUNNING;
+        return old_pid;
     }
 
 }
