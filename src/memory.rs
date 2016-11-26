@@ -23,8 +23,12 @@ fn allocate_page() -> u64 {
 }
 
 pub fn alloc(pid: u32) -> u64 {
-    let addr = allocate_page();
     unsafe {
+        // check max allocated memorsy per process (2MB * 512 (# of entries at paget table))
+        if process::PCBS[pid as usize].last_alloc_page == 511 {
+            return 0; //this is mapped to OS, so program can detect oom (if it wants to)
+        }
+
         let super_table = get_program_dir_table_addr(pid);
 
         process::PCBS[pid as usize].last_alloc_page += 1;

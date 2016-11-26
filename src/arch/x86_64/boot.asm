@@ -217,12 +217,11 @@ p3_table:
     resb 4096
 p2_table:
     resb 4096
-process1_mpl4_table: ; define statically because of mem align req.
-    resb 4096
-process1_pdp_table: ; define statically because of mem align req.
-    resb 4096
-process1_pd_table: ; define statically because of mem align req.
-    resb 4096
+; allocate 3 levels of tables for processes
+; we have max 10 hardocded processes
+; so we need 30 4KB tables aligned to 4KB
+resb 4096 * 10 * 3
+
 kstack_max:
     resb 4096 * 32
 kstack:
