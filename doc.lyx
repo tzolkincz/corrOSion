@@ -753,6 +753,15 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+acquire
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
@@ -762,7 +771,9 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+Pokusí se získat vlastnictví mutexu.
+ V případě neúspěchu se proces zablokuje.
+ V případě úspěchu bude volající proces ihned naplánován.
 \end_layout
 
 \end_inset
@@ -771,7 +782,7 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+-
 \end_layout
 
 \end_inset
@@ -780,7 +791,16 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
+\begin_inset Flex Code
+status open
 
+\begin_layout Plain Layout
+r12
+\end_layout
+
+\end_inset
+
+ - číslo mutexu
 \end_layout
 
 \end_inset
@@ -800,6 +820,15 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+release
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
@@ -809,7 +838,9 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+Odevzdá vlastnictví mutexu.
+ Jestliže ve frontě nečekají žádné další procesy, pokračuje volající proces.
+ Jinak pokračuje poslední z čekajících procesů.
 \end_layout
 
 \end_inset
@@ -818,7 +849,7 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
-
+-
 \end_layout
 
 \end_inset
@@ -827,7 +858,16 @@ Ano
 \begin_inset Text
 
 \begin_layout Plain Layout
+\begin_inset Flex Code
+status open
 
+\begin_layout Plain Layout
+r12
+\end_layout
+
+\end_inset
+
+ - číslo mutexu
 \end_layout
 
 \end_inset
@@ -865,6 +905,32 @@ Systémová volání
 \end_inset
 
 
+\end_layout
+
+\begin_layout Subsection
+Mutexy
+\end_layout
+
+\begin_layout Standard
+Systémová volání s kódy 5 a 6 dovolují získat resp.
+ odevzdat vlastnictví mutexu.
+ Mutexy jsou v našem OS abstrakcí sdílených prostředků.
+ Jelikož nemáme haldu pro jádro, používáme předem definovaný počet mutexů
+ a volající proces specifikuje, se kterým z mutexů chce pracovat.
+\end_layout
+
+\begin_layout Standard
+Po ukončení procesu přes systémové volání 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+terminate
+\end_layout
+
+\end_inset
+
+ jsou všechny mutexy procesu uvolněny.
 \end_layout
 
 \begin_layout Section
