@@ -165,10 +165,10 @@ pub fn handle_release(pid: u32) {
             process::dispatch_on(pid);
         } else {
             MUTEX_TABLE[mutex_id].waiting_count -= 1;
-            let pid = MUTEX_TABLE[mutex_id].waiting_queue[MUTEX_TABLE[mutex_id].waiting_count];
-            MUTEX_TABLE[mutex_id].by = pid;
-            process::PCBS[pid as usize].state = process::ProcessState::Ready;
-            process::dispatch_on(pid);
+            let pid_w = MUTEX_TABLE[mutex_id].waiting_queue[MUTEX_TABLE[mutex_id].waiting_count];
+            MUTEX_TABLE[mutex_id].by = pid_w;
+            process::PCBS[pid_w as usize].state = process::ProcessState::Ready;
+            process::dispatch_on(pid_w);
         }
     }
 }
