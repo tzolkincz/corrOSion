@@ -7,7 +7,9 @@ pub fn reschedule() {
     unsafe {
         let start = process::get_process_iterator_start();
         for i in start..(process::MAX_PROCESS_COUNT * 2) {
-            if process::PCBS[i % process::MAX_PROCESS_COUNT].eip != 0 {
+            let state = process::PCBS[i % process::MAX_PROCESS_COUNT].state;
+            if state != process::ProcessState::Blocked &&
+               state != process::ProcessState::Uninitialized {
                 process::dispatch_on((i % process::MAX_PROCESS_COUNT) as u32);
             }
         }

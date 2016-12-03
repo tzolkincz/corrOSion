@@ -27,6 +27,15 @@ struct APTEntry {
     name: [char; 10],
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum ProcessState {
+    Created,
+    Ready,
+    Blocked,
+    Uninitialized,
+    Running,
+}
+
 #[derive(Copy, Clone, Debug)]
 #[repr(packed)]
 pub struct PCB {
@@ -38,6 +47,7 @@ pub struct PCB {
     pub last_alloc_page: u64, // page 1 is stack, page 2 is program code
     page_table_addr: u64,
     pub code_physical_addr: u64, // Physical address
+    pub state: ProcessState,
 }
 
 struct KernelBlock {
@@ -71,6 +81,7 @@ pub static mut PCBS: [PCB; MAX_PROCESS_COUNT] = [PCB {
     page_table_addr: 0,
     last_alloc_page: 0,
     code_physical_addr: 0,
+    state: ProcessState::Uninitialized,
 }; MAX_PROCESS_COUNT];
 
 pub fn load_apt() {
@@ -111,6 +122,7 @@ pub fn create_prcess(id: u32) {
         PCBS[id as usize].eip = memory::get_program_code_va();
         PCBS[id as usize].page_table_addr = super_dir;
         PCBS[id as usize].last_alloc_page = 1;
+        PCBS[id as usize].state = ProcessState::Created;
     }
 
     // move program code to memory accessible from user space
@@ -141,9 +153,15 @@ pub fn dispatch_on(pid: u32) {
     }
 
     unsafe {
-        if PCBS[pid as usize].eip == 0 {
+        if PCBS[pid as usize].state == ProcessState::Uninitialized {
             // uninicialized process
             ..::easy_print_line(1, "Cant dispatch uninicialized process", 0x4f);
+            loop {}
+        }
+
+        if PCBS[pid as usize].state == ProcessState::Blocked {
+            // uninicialized process
+            ..::easy_print_line(1, "Cant dispatch blocked process", 0x4f);
             loop {}
         }
 
@@ -164,7 +182,8 @@ pub fn dispatch_on(pid: u32) {
             :"ecx", "edx", "eax": "intel", "volatile"
         );
 
-        if PCBS[pid as usize].esp != PCBS[pid as usize].ebp {
+        if PCBS[pid as usize].state != ProcessState::Created {
+            PCBS[pid as usize].state = ProcessState::Running;
 
             // ---------------------------------------------------------------------------------
             // these registers state must be handled by program iteslf (are needed for syscalls)
@@ -196,6 +215,7 @@ pub fn dispatch_on(pid: u32) {
             );
         }
 
+        PCBS[pid as usize].state = ProcessState::Running;
 
         asm!("
             sysexit" ::
@@ -256,6 +276,7 @@ pub fn dispatch_off() -> u32 {
         );
 
         let old_pid = KCB.current_process;
+        PCBS[old_pid as usize].state = ProcessState::Ready;
         KCB.last_process = old_pid;
         KCB.current_process = NO_PROCESS_RUNNING;
         return old_pid;
