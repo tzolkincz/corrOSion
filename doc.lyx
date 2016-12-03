@@ -5,6 +5,10 @@
 \save_transient_properties true
 \origin unavailable
 \textclass article-beamer
+\begin_preamble
+\let\stdsection\section
+\renewcommand*{\section}{\clearpage\stdsection}
+\end_preamble
 \use_default_options true
 \begin_modules
 theorems-ams
@@ -95,6 +99,14 @@ Jiří Láska, Václav Löffelmann
 \end_layout
 
 \begin_layout Section
+Úvod
+\end_layout
+
+\begin_layout Standard
+Bylo nebylo, měření se nám velice líbilo (jako v elabech na střední :) )
+\end_layout
+
+\begin_layout Section
 Segmentace a stránkování
 \end_layout
 
@@ -131,6 +143,12 @@ Jádro má nastavené identické zobrazení virtuální adresy na fyzickou.
 \end_layout
 
 \begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "subsec:Stránkování-programů"
+
+\end_inset
+
 Stránkování programů
 \end_layout
 
@@ -213,7 +231,7 @@ lines 0
 placement o
 overhang 0col%
 width "50col%"
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Graphics
@@ -240,13 +258,110 @@ Schéma fyzického rozdělení paměti
 
 \end_layout
 
-\begin_layout Plain Layout
+\end_inset
 
+
+\end_layout
+
+\begin_layout Section
+Procesy
+\end_layout
+
+\begin_layout Subsection
+Spouštění
+\end_layout
+
+\begin_layout Subsection
+Stavy
+\end_layout
+
+\begin_layout Standard
+Program se může nacházet celkem v pěti stavech.
+ Defaultním stavem, před inicializací procesu a po jeho ukončení, je stav
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Uninitialized
 \end_layout
 
 \end_inset
 
+.
+ Po zavedení programu (viz odstavec 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "subsec:Stránkování-programů"
 
+\end_inset
+
+) je program ve stavu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Created
+\end_layout
+
+\end_inset
+
+.
+ Program v tomto stavu je již zaveden v paměti a je připraven na spuštění.
+ V současné implementaci se také rovnou spustí, ale nic nebrání tomu, aby
+ se provedlo přeplánování a běžel jiný program.
+ Program, který zrovna běží na procesoru, má stav 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Running
+\end_layout
+
+\end_inset
+
+.
+ Jestliže je proces připravený a plánovatelný, ale zrovna neběží má stav
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Ready
+\end_layout
+
+\end_inset
+
+.
+ Proces, který se zablokoval nad mutexem se nachází ve stavu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Blocked
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsection
+APT (All Process Table)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+APT
+\emph default
+ je struktura, která uchovává informace o všech dostupných programech v
+ operačním systému.
+ Z těchto programů se pak vytvářejí jedna k jedné jejich instance - procesy.
+ Z jednoho programu tedy může v jednu chvíli existovat v systému pouze jedna
+ instance.
+ Toto omezení jsme zavedli z důvodu zjednodušení.
 \end_layout
 
 \begin_layout Section
@@ -495,9 +610,9 @@ reference "table:syscalls"
 \begin_layout Standard
 \begin_inset Wrap table
 lines 0
-placement o
+placement i
 overhang 0in
-width "100text%"
+width "100page%"
 status open
 
 \begin_layout Plain Layout
@@ -900,13 +1015,6 @@ Systémová volání
 
 \end_layout
 
-\begin_layout Standard
-\begin_inset Newpage clearpage
-\end_inset
-
-
-\end_layout
-
 \begin_layout Subsection
 Mutexy
 \end_layout
@@ -931,6 +1039,145 @@ terminate
 \end_inset
 
  jsou všechny mutexy procesu uvolněny.
+\end_layout
+
+\begin_layout Section
+Spuštění a testování
+\end_layout
+
+\begin_layout Standard
+Operační systém jsme testovali v prostředí 
+\emph on
+Qemu, 
+\emph default
+avšak měl by jít zavést přímo na reálný hardware.
+\end_layout
+
+\begin_layout Subsection
+Instalace závislostí
+\end_layout
+
+\begin_layout Standard
+Pro kompilaci jsou potřeba: překladač assembleru, zavaděč grub a konvertor
+ na souborový systém ISO 9660.
+\end_layout
+
+\begin_layout Standard
+Na linuxovém systému se správcem balíčků 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt
+\end_layout
+
+\end_inset
+
+ tyto závislosti nainstalujeme snadno a rychle za pomoci příkazu
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt install nasm grub-common xorriso qemu-system-x86
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pokud používáme Ubuntu, ještě doinstalujeme binární zavaděč
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt-get install grub-pc-bin
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Systém je napsaný v Rustu a proto potřebujeme ještě překladač tohoto jazyka.
+ Vzhledem k tomu, že používáme některé nestandardní konstrukty, je potřeba
+ na překlad použít tzv.
+ noční sestavení Rustu.
+ Tuto verzi můžeme nejjednodušeji nainstalovat následujícími příkazy, nicméně
+ jsou potenciálně NEBEZPEČNÉ - doporučujeme je spouštět odděleně od produkčních
+ systémů.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+curl -f -L https://static.rust-lang.org/rustup.sh -O
+\begin_inset Newline newline
+\end_inset
+
+sh rustup.sh --channel=nightly
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Toto noční sestavení lze samozřejmě nainstalovat i jinak, například překladem
+ ze zdrojových kódů.
+\end_layout
+
+\begin_layout Subsection
+Spuštění
+\end_layout
+
+\begin_layout Standard
+Vlastní přeložení a spuštění provedeme zadáním příkazu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+make run
+\end_layout
+
+\end_inset
+
+ v adresáři s operačním systémem.
 \end_layout
 
 \begin_layout Section
@@ -978,8 +1225,11 @@ guard page
 \emph default
  nebyla implementována.
  Jádro tedy není schopno detekovat přetečení vlastního zásobníku.
- Avšak jaderný zásobník není nijak hojně využívaný a má vyhrazený dostatečný
- prostor.
+ Avšak jaderný zásobník není nijak hojně
+\end_layout
+
+\begin_layout Standard
+využívaný a má vyhrazený dostatečný prostor.
 \end_layout
 
 \begin_layout Subsection
@@ -1018,6 +1268,21 @@ svoji
  Proti tomuto útoku by se samozřejmě dalo zabránit kontrolováním předávané
  adresy zásobníku.
  
+\end_layout
+
+\begin_layout Section
+Závěr
+\end_layout
+
+\begin_layout Standard
+V rámci semestrální práce se nám povedlo vytvořit jednoduchý operační systém
+ obsahující některé ze základních funkcionalit operačního systému.
+ Implementovali jsme základní funkcionalitu jako obsluhu přerušení, některá
+ základní systémová volání (alokace paměti, mutexy) a přepínání mezi procesy.
+ Do opravdového nasazení má tento systém opravdu daleko, ale to by byla,
+ myslíme si, záležitost na více než jednu semestrální práci.
+ V průběhu práce jsme se seznámili se základní syntaxí jazyku Rust a fungováním
+ architektury x86-64.
 \end_layout
 
 \end_body
