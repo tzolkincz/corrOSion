@@ -12,3 +12,9 @@
 
 # Build directory
 /build/
+
+# Logs
+*.log
+
+# Emacs temp
+\#*

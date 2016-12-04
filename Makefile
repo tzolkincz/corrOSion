@@ -28,7 +28,14 @@ clean:
 	@rm -rf build
 
 run: $(iso)
-	@qemu-system-x86_64 -cdrom $(iso)
+	@qemu-system-x86_64 -cpu Broadwell -cdrom $(iso) -no-reboot -monitor stdio -d int,cpu_reset 2> ./qemu.log
+
+# waits for gdb to connect
+# to connect gdb, run:     gdb "build/kernel-x86_64.bin" -ex "target remote :1234"
+debug: $(iso)
+	@qemu-system-x86_64 -cpu Broadwell -cdrom $(iso) -s -S -d int,cpu_reset 2> ./qemu.log
+
+
 
 iso: $(iso)
 

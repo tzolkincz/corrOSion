@@ -7,28 +7,118 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-#![feature(lang_items)]
+#![feature(asm, lang_items, naked_functions)]
 #![no_std]
 
 extern crate rlibc;
 
+mod idt;
+mod process;
+mod programs;
+mod memory;
+mod syscall;
+mod scheduler;
+
+pub use programs::program1; //export for linker
+pub use programs::program2; //export for linker
+
 #[no_mangle]
-pub extern "C" fn rust_main() {
+#[naked]
+#[cfg(target_arch = "x86_64")]  // ??? -- seen in Redox OS
+pub unsafe extern "C" fn kint_zero() {
+    asm!("
+       push rax
+       push rcx
+       push rdx
+       push r8
+       push r9
+       push r10
+       push r11
+       push rdi
+       push rsi" :::: "intel", "volatile");
+
+    easy_print_line(0, "kint_zero", 0xf4);
+
+    asm!("
+       pop rsi
+       pop rdi
+       pop r11
+       pop r10
+       pop r9
+       pop r8
+       pop rdx
+       pop rcx
+       pop rax" :::: "intel");
+
+    asm!("iretq" :::: "intel");
+}
+
+#[no_mangle]
+pub extern "C" fn kentry() {
+    easy_print_line(24, "kentry .", 0x4f);
+
+
+    //    unsafe {asm!("int 0"::::"intel");}
+
+    let pid = process::dispatch_off();
+    syscall::handle_syscall(pid);
+
+
+    // easy_print_line(24, "kentry !", 0x2f);
+    // loop {}
+}
+
+#[no_mangle]
+pub extern "C" fn kmain() {
     // ATTENTION: we have a very small stack and no guard page
+    easy_print_line(0, "kmain .", 0x4f);
 
-    let hello = b"Hello World!";
-    let color_byte = 0x1f; // white foreground, blue background
+    unsafe {
+        let mut gdt64_kcode: u64;
+        asm!("mov ecx, 0x174 \n rdmsr" : "={eax}"(gdt64_kcode) ::: "intel");
 
-    let mut hello_colored = [color_byte; 24];
-    for (i, char_byte) in hello.into_iter().enumerate() {
-        hello_colored[i*2] = *char_byte;
+        idt::IDT[0].set_offset(gdt64_kcode as u16, kint_zero as usize);
+        idt::IDT[0].set_flags(0b10001110);
+        idt::IDTR.set_slice(&idt::IDT);
+        idt::IDTR.load();
+
+        *((0xb8000 + 160 * 1) as *mut _) = [gdt64_kcode as u8 + '0' as u8, 0x1f as u8];
     }
 
-    // write `Hello World!` to the center of the VGA text buffer
-    let buffer_ptr = (0xb8000 + 1988) as *mut _;
-    unsafe { *buffer_ptr = hello_colored };
+    process::load_apt();
+    process::create_prcess(0);
+    process::create_prcess(1);
+    scheduler::reschedule();
 
+
+    easy_print_line(0, "kmain !", 0x2f);
     loop {}
+}
+
+
+/**
+ * for debug purposes
+ */
+const LINE_LENGTH: usize = 80;
+pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
+
+    let mut line_colored = [color; 2 * LINE_LENGTH];
+    let mut i = 0;
+    for char_byte in line.chars() {
+        line_colored[i * 2] = char_byte as u8;
+        i += 1;
+    }
+
+    // fill rest of line with spaces
+    while i < LINE_LENGTH {
+        line_colored[i * 2] = ' ' as u8;
+        i += 1;
+    }
+
+    // write to the VGA text buffer
+    let buffer_ptr = (0xb8000 + LINE_LENGTH as i32 * 2 * line_number) as *mut _;
+    unsafe { *buffer_ptr = line_colored };
+
 }
 
 #[cfg(not(test))]
@@ -37,7 +127,9 @@ extern "C" fn eh_personality() {}
 
 #[cfg(not(test))]
 #[lang = "panic_fmt"]
-extern "C" fn panic_fmt() -> ! {loop{}}
+extern "C" fn panic_fmt() -> ! {
+    loop {}
+}
 
 #[allow(non_snake_case)]
 #[no_mangle]

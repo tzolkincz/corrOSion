@@ -7,42 +7,53 @@
 ; option. This file may not be copied, modified, or distributed
 ; except according to those terms.
 
+global kstack
 global start
+
+global gdt64.kcode
+global task_state_segment
+
+;extern kint_zero
+
 extern long_mode_start
 
 section .text
 bits 32
 start:
-    mov esp, stack_top
+    mov esp, kstack
 
     call check_multiboot
     call check_cpuid
+    call check_intel
     call check_long_mode
 
     call set_up_page_tables
     call enable_paging
     call set_up_SSE
 
+
     ; load the 64-bit GDT
     lgdt [gdt64.pointer]
 
     ; update selectors
-    mov ax, gdt64.data
+    mov ax, gdt64.kdata
     mov ss, ax
     mov ds, ax
     mov es, ax
 
-    jmp gdt64.code:long_mode_start
+    ;lidt [idt64.pointer]
+
+    jmp gdt64.kcode:long_mode_start
 
 set_up_page_tables:
     ; map first P4 entry to P3 table
     mov eax, p3_table
-    or eax, 0b11 ; present + writable
+    or eax, 0b111 ; present + writable + userspace accessible
     mov [p4_table], eax
 
     ; map first P3 entry to P2 table
     mov eax, p2_table
-    or eax, 0b11 ; present + writable
+    or eax, 0b111 ; present + writable + userspace accessible
     mov [p3_table], eax
 
     ; map each P2 entry to a huge 2MiB page
@@ -51,7 +62,7 @@ set_up_page_tables:
     ; map ecx-th P2 entry to a huge page that starts at address (2MiB * ecx)
     mov eax, 0x200000  ; 2MiB
     mul ecx            ; start address of ecx-th page
-    or eax, 0b10000011 ; present + writable + huge
+    or eax, 0b10000111 ; present + writable + huge + userspace accessible
     mov [p2_table + ecx * 8], eax ; map ecx-th entry
 
     inc ecx            ; increase counter
@@ -74,6 +85,7 @@ enable_paging:
     mov ecx, 0xC0000080
     rdmsr
     or eax, 1 << 8
+    btr eax, 11; disable NX (EFER_NX) // btr = bit test and reset
     wrmsr
 
     ; enable paging in the cr0 register
@@ -98,7 +110,7 @@ check_multiboot:
     jne .no_multiboot
     ret
 .no_multiboot:
-    mov al, "0"
+    mov al, "m"
     jmp error
 
 ; Throw error 1 if the CPU doesn't support the CPUID command.
@@ -135,7 +147,19 @@ check_cpuid:
     je .no_cpuid
     ret
 .no_cpuid:
-    mov al, "1"
+    mov al, "c"
+    jmp error
+
+check_intel:
+    mov eax, 0
+    cpuid
+    ;mov eax, 0xaabbccdd ; shit
+    mov eax, 0x756e6547; "Genu"
+    cmp eax, ebx
+    jne .no_intel
+    ret
+.no_intel:
+    mov al, "i"
     jmp error
 
 ; Throw error 2 if the CPU doesn't support Long Mode.
@@ -153,7 +177,7 @@ check_long_mode:
     jz .no_long_mode       ; If it's not set, there is no long mode
     ret
 .no_long_mode:
-    mov al, "2"
+    mov al, "l"
     jmp error
 
 ; Check for SSE and enable it. If it's not supported throw error "a".
@@ -175,8 +199,15 @@ set_up_SSE:
 
     ret
 .no_SSE:
-    mov al, "a"
+    mov al, "s"
     jmp error
+
+section .data
+; warning - zeroing data of this segment
+align 4096
+task_state_segment:
+    resb 104 ; size of TSS
+
 
 section .bss
 align 4096
@@ -186,17 +217,92 @@ p3_table:
     resb 4096
 p2_table:
     resb 4096
-stack_bottom:
-    resb 64
-stack_top:
+; allocate 3 levels of tables for processes
+; we have max 10 hardocded processes
+; so we need 30 4KB tables aligned to 4KB
+resb 4096 * 10 * 3
 
+kstack_max:
+    resb 4096 * 32
+kstack:
+
+
+; http://cathyreisenwitz.com/wp-content/uploads/2016/01/no.jpg
 section .rodata
-gdt64:
-    dq 0 ; zero entry
-.code: equ $ - gdt64 ; new
-    dq (1<<44) | (1<<47) | (1<<41) | (1<<43) | (1<<53) ; code segment
-.data: equ $ - gdt64 ; new
-    dq (1<<44) | (1<<47) | (1<<41) ; data segment
-.pointer:
-    dw $ - gdt64 - 1
-    dq gdt64
+gdt64: ; Global Descriptor Table (64-bit).
+    .null: equ $ - gdt64         ; The null descriptor. Kernel parameters
+    dw 0                         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 0                         ; Access.
+    db 0                         ; Granularity.
+    db 0                         ; Base (high).
+    .kcode: equ $ - gdt64         ; The code descriptor. Ring0 info (aka DPL)
+    dw 0000111111111111b         ; Limit (low).         Descriptor Privilege Level
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10011010b                 ; Access (exec/read).
+    db 10100000b                 ; Granularity.
+    db 0                         ; Base (high).
+    .kdata: equ $ - gdt64         ; The data descriptor.
+    dw 0000111111111111b         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 10010010b                 ; Access (read/write).
+    db 10100000b                 ; Granularity.
+    db 0                         ; Base (high).
+    ; 32bit sysexit
+    .ucode: equ $ - gdt64         ; The code descriptor. Ring3 info
+    dw 0001111111111111b         ; Limit (low).
+    dw 0000111111111111b         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11111010b                 ; Access (exec/read).
+    db 10100000b                 ; Granularity and Limit (hi)
+    db 00000001b                 ; Base (high).
+    .udata: equ $ - gdt64    ; The data descriptor.
+    dw 0001111111111111b         ; Limit (low).
+    dw 0000111111111111b         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11110010b                 ; Access (read/write).
+    db 10100000b                 ; Granularity  and Limit (hi)
+    db 00000000b                 ; Base (high).
+    ; 64bit sysexit
+    .ucode64: equ $ - gdt64         ; The code descriptor. Ring3 info
+    dw 0001111111111111b         ; Limit (low).
+    dw 0000111111111111b         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11111010b                 ; Access (exec/read).
+    db 10100000b                 ; Granularity and Limit (hi)
+    db 00000001b                 ; Base (high).
+    .udata64: equ $ - gdt64         ; The data descriptor.
+    dw 0010111111111111b         ; Limit (low).
+    dw 0                         ; Base (low).
+    db 0                         ; Base (middle)
+    db 11110010b                 ; Access (read/write).
+    db 10100000b                 ; Granularity  and Limit (hi)
+    db 00000010b                 ; Base (high).
+    .tss:
+    dq task_state_segment ; set task_state_segment (the only one)
+    dw 0x89 ; limit
+    dw 0x40 ; access
+    resb 0x85
+
+    .pointer:                    ; The GDT-pointer.
+    dw $ - gdt64 - 1             ; Limit.
+    dq gdt64                     ; Base.
+
+;idt64:
+;    .kint_zero_const: equ 0x101210
+;    dw idt64.kint_zero_const & 0xFFFF ; Offset (low)
+;    dw gdt64.kcode ; Selector
+;    db 0 ; Zero
+;    db 10001110b ; Type and Attributes
+;    dw idt64.kint_zero_const >> 16 & 0xFFFF; Offset (middle)
+;    dq idt64.kint_zero_const >> 32 & 0xFFFFFFFF; Offset (high)
+;    dq 0 ; Zero
+;
+;    ; and such
+;
+;    .pointer:
+;    dw $ - idt64 - 1
+;    dq idt64
