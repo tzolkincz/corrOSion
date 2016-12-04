@@ -1,9 +1,7 @@
 #LyX 2.2 created this file. For more info see http://www.lyx.org/
-\lyxformat 508
+\lyxformat 474
 \begin_document
 \begin_header
-\save_transient_properties true
-\origin unavailable
 \textclass article-beamer
 \begin_preamble
 \let\stdsection\section
@@ -22,16 +20,16 @@ tabs-within-sections
 \language_package default
 \inputencoding auto
 \fontencoding global
-\font_roman "default" "default"
-\font_sans "default" "default"
-\font_typewriter "default" "default"
-\font_math "auto" "auto"
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
 \font_default_family default
 \use_non_tex_fonts false
 \font_sc false
 \font_osf false
-\font_sf_scale 100 100
-\font_tt_scale 100 100
+\font_sf_scale 100
+\font_tt_scale 100
 \graphics default
 \default_output_format default
 \output_sync 0
@@ -145,7 +143,7 @@ Jádro má nastavené identické zobrazení virtuální adresy na fyzickou.
 \begin_layout Subsection
 \begin_inset CommandInset label
 LatexCommand label
-name "subsec:Stránkování-programů"
+name "sub:Stránkování-programů"
 
 \end_inset
 
@@ -292,7 +290,7 @@ Uninitialized
  Po zavedení programu (viz odstavec 
 \begin_inset CommandInset ref
 LatexCommand ref
-reference "subsec:Stránkování-programů"
+reference "sub:Stránkování-programů"
 
 \end_inset
 
@@ -530,11 +528,6 @@ width "100col%"
 special "none"
 height "1in"
 height_special "totalheight"
-thickness "0.4pt"
-separation "3pt"
-shadowsize "4pt"
-framecolor "black"
-backgroundcolor "none"
 status open
 
 \begin_layout Plain Layout
