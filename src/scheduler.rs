@@ -23,7 +23,7 @@ pub fn reschedule() {
 
 
 pub unsafe fn spinkacek() {
-    for i in 0..1000000 {
+    for _ in 0..1000000 {
         asm!("nop" :::: "intel", "volatile");
     }
 }

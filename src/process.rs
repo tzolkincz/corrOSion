@@ -50,6 +50,7 @@ pub struct PCB {
     pub state: ProcessState,
 }
 
+#[allow(dead_code)]
 struct KernelBlock {
     ebp: u64, // esp: u64, //not needed - stays in esp0 register
     current_process: u32,
@@ -140,6 +141,7 @@ pub fn create_prcess(id: u32) {
 
 #[no_mangle]
 #[inline(always)]
+#[allow(private_no_mangle_fns)]
 pub fn dispatch_on(pid: u32) {
     if DEBUG_OUTPUT {
         unsafe {
@@ -234,6 +236,7 @@ pub fn dispatch_on(pid: u32) {
 // -------------------------------------
 #[no_mangle]
 #[inline(always)]
+#[allow(private_no_mangle_fns)]
 pub fn dispatch_off() -> u32 {
 
     unsafe {

@@ -71,8 +71,10 @@ pub extern "C" fn kentry() {
 #[no_mangle]
 pub extern "C" fn kmain() {
     // ATTENTION: we have a very small stack and no guard page
+    erase_whole_screen();
     easy_print_line(0, "kmain .", 0x4f);
 
+    #[allow(unused_mut)]
     unsafe {
         let mut gdt64_kcode: u64;
         asm!("mov ecx, 0x174 \n rdmsr" : "={eax}"(gdt64_kcode) ::: "intel");
@@ -99,26 +101,40 @@ pub extern "C" fn kmain() {
 /**
  * for debug purposes
  */
-const LINE_LENGTH: usize = 80;
-pub fn easy_print_line(line_number: i32, line: &str, color: u8) {
+const VGA_TEXT_BUFFER: u32 = 0xb8000;
+const COLS: u8 = 80;
+const ROWS: u8 = 25;
 
-    let mut line_colored = [color; 2 * LINE_LENGTH];
+pub fn set_attr_char(ac: (u8, char), position: (u8, u8)) {
+    let (attr, character) = ac;
+    let (row, col) = position;
+    let cell = (VGA_TEXT_BUFFER + 2 * (row as u32 * COLS as u32 + col as u32)) as *mut _;
+
+    unsafe { *cell.offset(1) = attr };
+    unsafe { *cell = character as u8 };
+}
+
+pub fn easy_print_line(_line: i32, text: &str, attr: u8) {
+    let line: u8 = _line as u8;
     let mut i = 0;
-    for char_byte in line.chars() {
-        line_colored[i * 2] = char_byte as u8;
+    for char_byte in text.chars() {
+        set_attr_char((attr, char_byte), (line, i));
         i += 1;
     }
 
     // fill rest of line with spaces
-    while i < LINE_LENGTH {
-        line_colored[i * 2] = ' ' as u8;
+    while i < COLS {
+        set_attr_char((attr, ' '), (line, i));
         i += 1;
     }
+}
 
-    // write to the VGA text buffer
-    let buffer_ptr = (0xb8000 + LINE_LENGTH as i32 * 2 * line_number) as *mut _;
-    unsafe { *buffer_ptr = line_colored };
-
+pub fn erase_whole_screen() {
+    for row in 0..ROWS {
+        for col in 0..COLS {
+            set_attr_char((0x0f, ' '), (row, col));
+        }
+    }
 }
 
 #[cfg(not(test))]
