@@ -23,6 +23,7 @@ static mut MUTEX_TABLE: [MutexEntry; MUTEX_COUNT] = [MutexEntry {
 
 #[no_mangle]
 #[inline(always)]
+#[allow(private_no_mangle_fns)]
 pub fn handle_syscall(pid: u32) {
 
 
@@ -113,7 +114,7 @@ pub fn handle_pause(pid: u32) {
     scheduler::reschedule();
 }
 
-
+#[allow(unused_mut)]
 unsafe fn get_mutex_id() -> usize {
     let mut mutex_id: usize;
     // get mutex id

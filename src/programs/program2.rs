@@ -1,6 +1,7 @@
 
 
 // #[no_mangle]
+#[allow(unreachable_code)]
 pub extern "C" fn main2() -> u8 {
 
     unsafe {
