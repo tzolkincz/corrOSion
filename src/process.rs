@@ -306,6 +306,7 @@ pub fn terminate(pid: u32) {
         PCBS[pid as usize].eip = 0;
         PCBS[pid as usize].page_table_addr = 0;
         PCBS[pid as usize].last_alloc_page = 0;
+        PCBS[pid as usize].state = ProcessState::Uninitialized;
 
         if pid == KCB.current_process {
             KCB.current_process = NO_PROCESS_RUNNING;
