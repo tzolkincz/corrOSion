@@ -1,0 +1,1282 @@
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
+\lyxformat 474
+\begin_document
+\begin_header
+\textclass article-beamer
+\begin_preamble
+\let\stdsection\section
+\renewcommand*{\section}{\clearpage\stdsection}
+\end_preamble
+\use_default_options true
+\begin_modules
+theorems-ams
+eqs-within-sections
+figs-within-sections
+logicalmkup
+tabs-within-sections
+\end_modules
+\maintain_unincluded_children false
+\language czech
+\language_package default
+\inputencoding auto
+\fontencoding global
+\font_roman default
+\font_sans default
+\font_typewriter default
+\font_math auto
+\font_default_family default
+\use_non_tex_fonts false
+\font_sc false
+\font_osf false
+\font_sf_scale 100
+\font_tt_scale 100
+\graphics default
+\default_output_format default
+\output_sync 0
+\bibtex_command default
+\index_command default
+\paperfontsize default
+\spacing single
+\use_hyperref false
+\papersize default
+\use_geometry true
+\use_package amsmath 1
+\use_package amssymb 1
+\use_package cancel 1
+\use_package esint 1
+\use_package mathdots 1
+\use_package mathtools 1
+\use_package mhchem 1
+\use_package stackrel 1
+\use_package stmaryrd 1
+\use_package undertilde 1
+\cite_engine basic
+\cite_engine_type default
+\biblio_style plain
+\use_bibtopic false
+\use_indices false
+\paperorientation portrait
+\suppress_date false
+\justification true
+\use_refstyle 1
+\index Index
+\shortcut idx
+\color #008000
+\end_index
+\secnumdepth 2
+\tocdepth 2
+\paragraph_separation indent
+\paragraph_indentation default
+\quotes_language german
+\papercolumns 1
+\papersides 1
+\paperpagestyle default
+\tracking_changes false
+\output_changes false
+\html_math_output 0
+\html_css_as_file 0
+\html_be_strict false
+\end_header
+
+\begin_body
+
+\begin_layout Title
+Semestrální práce KIV/OS 
+\end_layout
+
+\begin_layout Subtitle
+corrOSion
+\end_layout
+
+\begin_layout Author
+Jiří Láska, Václav Löffelmann
+\end_layout
+
+\begin_layout Date
+2016
+\end_layout
+
+\begin_layout Section
+Úvod
+\end_layout
+
+\begin_layout Standard
+Bylo nebylo, měření se nám velice líbilo (jako v elabech na střední :) )
+\end_layout
+
+\begin_layout Section
+Segmentace a stránkování
+\end_layout
+
+\begin_layout Standard
+Operační systém 
+\emph on
+\noun on
+corrOSion
+\emph default
+ 
+\noun default
+pracuje v tzv.
+ 
+\emph on
+long mode.
+ 
+\emph default
+V tomoto režimu procesoru je vyžadováno zapnuté stránkování.
+ Segmentace je označena za zastaralou, nicméně je potřeba korektně nastavit
+ GDT (Global Descriptor Table).
+\end_layout
+
+\begin_layout Standard
+Pro jednoduchost jsme použili stránky o velikosti 2 MB.
+\end_layout
+
+\begin_layout Subsection
+Stránkování jádra
+\end_layout
+
+\begin_layout Standard
+Jádro má nastavené identické zobrazení virtuální adresy na fyzickou.
+ Tato vlastnost se hodí například v případě manipulace s uživatelskými programy.
+\end_layout
+
+\begin_layout Subsection
+\begin_inset CommandInset label
+LatexCommand label
+name "sub:Stránkování-programů"
+
+\end_inset
+
+Stránkování programů
+\end_layout
+
+\begin_layout Standard
+Programy mají identicky namapovanou jadernou oblast (0-64 MB).
+ Stránky v této oblasti mají nastavený příznak nepřístupnosti z neprivilegovanéh
+o režimu.
+ Přístup do jaderné oblasti programem tedy vyvolá výpadek stránky (Page
+ Fault).
+ Přístupná oblast pro program začíná na 64 MB.
+ Při zavedení programu jsou mu alokovány rovnou dvě stránky.
+ První, která začíná na jeho 64.
+ MB virtuální adresy je vyhrazena pro programový zásobník.
+ Do druhé stránky, začínající na 66.
+ MB virtuální adresy, je nakopírován kód programu, odkud je pak spouštěn.
+ Následující stránky jsou mapovány jako nepřístupné, avšak program má možnost
+ zavolat systémové volání pro alokaci paměti.
+ Při tomto volání se v jádře posune ukazatel obsazené fyzické paměti o alokovano
+u stránku (tím se vyhradí pro proces) a dále je tato stránka namapována
+ na následující, ještě nealokovanou, stránku virtuální paměti procesu.
+ Proces tedy dostává nefragmentovaný blok paměti.
+\end_layout
+
+\begin_layout Subsection
+Fyzické rozložení paměti
+\end_layout
+
+\begin_layout Standard
+Na obrázku 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Schéma-fyzického-rozdělení"
+
+\end_inset
+
+ je naznačeno fyzické rozdělení paměti.
+ Od adresy 0 začínají oblasti jako 
+\emph on
+BIOS Data Area
+\emph default
+, 
+\emph on
+OS Boot Sector
+\emph default
+,
+\emph on
+ VGA buffer
+\emph default
+ a další.
+ Následuje základní nízkoúrovňový kód kernelu (kontrola instrukčních rozšíření,
+ přepnutí do long modu), vyhrazená paměť pro stránkování kernelu a uživatelských
+ procesů.
+ Pro jednoduchost je alokována rovnou paměť pro pevný počet uživatelských
+ procesů.
+ Pro každý proces (i jádro) je vyhrazeno místo pro tři tabulky stránkování.
+ Naše jádro totiž podporuje jenom jednu tabulku na každé úrovni stránkování.
+ Což, nicméně, při stránkách o velikosti 2 MB dává procesům až 1 GB přístupné
+ paměti.
+ To pro naše účely považujeme za dostatečné.
+ Následuje ještě jaderný zásobník, tabulka deskriptorů a ostatní vysokoúrovňový
+ kód.
+\end_layout
+
+\begin_layout Standard
+Na adresách od 64.
+ MB se nachází kódy, zásobníky a data uživatelských procesů, jak je na obrázku
+ 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "fig:Schéma-fyzického-rozdělení"
+
+\end_inset
+
+ znázorněno.
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap figure
+lines 0
+placement o
+overhang 0col%
+width "50col%"
+status collapsed
+
+\begin_layout Plain Layout
+\begin_inset Graphics
+	filename memory_mgmt.svg
+	width 50text%
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "fig:Schéma-fyzického-rozdělení"
+
+\end_inset
+
+Schéma fyzického rozdělení paměti
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Section
+Procesy
+\end_layout
+
+\begin_layout Subsection
+Spouštění
+\end_layout
+
+\begin_layout Subsection
+Stavy
+\end_layout
+
+\begin_layout Standard
+Program se může nacházet celkem v pěti stavech.
+ Defaultním stavem, před inicializací procesu a po jeho ukončení, je stav
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Uninitialized
+\end_layout
+
+\end_inset
+
+.
+ Po zavedení programu (viz odstavec 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "sub:Stránkování-programů"
+
+\end_inset
+
+) je program ve stavu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Created
+\end_layout
+
+\end_inset
+
+.
+ Program v tomto stavu je již zaveden v paměti a je připraven na spuštění.
+ V současné implementaci se také rovnou spustí, ale nic nebrání tomu, aby
+ se provedlo přeplánování a běžel jiný program.
+ Program, který zrovna běží na procesoru, má stav 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Running
+\end_layout
+
+\end_inset
+
+.
+ Jestliže je proces připravený a plánovatelný, ale zrovna neběží má stav
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Ready
+\end_layout
+
+\end_inset
+
+.
+ Proces, který se zablokoval nad mutexem se nachází ve stavu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+Blocked
+\end_layout
+
+\end_inset
+
+.
+ 
+\end_layout
+
+\begin_layout Subsection
+APT (All Process Table)
+\end_layout
+
+\begin_layout Standard
+
+\emph on
+APT
+\emph default
+ je struktura, která uchovává informace o všech dostupných programech v
+ operačním systému.
+ Z těchto programů se pak vytvářejí jedna k jedné jejich instance - procesy.
+ Z jednoho programu tedy může v jednu chvíli existovat v systému pouze jedna
+ instance.
+ Toto omezení jsme zavedli z důvodu zjednodušení.
+\end_layout
+
+\begin_layout Section
+Systémová volání
+\end_layout
+
+\begin_layout Standard
+Náš jednoduchý operační systém poskytuje uživatelským procesům základní
+ systémová volání.
+\end_layout
+
+\begin_layout Subsection
+Volací konvence
+\end_layout
+
+\begin_layout Standard
+Aby uživatelský proces zavolal systémové volání, musí nastavit, v závislosti
+ na volání, minimálně tři parametry.
+ Těmito parametry jsou minimálně:
+\end_layout
+
+\begin_layout Enumerate
+Číslo systémového volání, předávané v registru 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r13
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Ukazatel na instrukci v programu před systémovým voláním, když chce uživatelský
+ program zachovat tok programu.
+ V případě, že uživatelský program chce skočit na jinou instrukci, tak ukazatel
+ nastaví na 2 byty před tuto jinou instrukci.
+ Tento parametr se předává v registru 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r14
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Enumerate
+Ukazatel na vrchol zásobníku v uživatelském programu, předaný v registru
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r15
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Pro vlastní vstup do kódu operačního systému používáme instrukci 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+sysenter
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Standard
+Volající má zaručeno, že obsah některých registrů zůstane zachován mezi
+ zavoláním systémového volání a návratem do programu.
+ Tyto registry jsou následující: 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r12, r11, r10, r9, r8, rdi, rsi
+\end_layout
+
+\end_inset
+
+.
+\end_layout
+
+\begin_layout Subsection
+Příklad systémového volání
+\end_layout
+
+\begin_layout Standard
+Následující příklad systémového volání ukazuje jednoduché volání systémové
+ služby pauzy.
+ Nejdříve jsou nastaveny potřebné registry a poté je zavolána instrukce
+ 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+sysenter
+\end_layout
+
+\end_inset
+
+.
+ Zajímavé je, že x86 nepodporuje přímé kopírování registru 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+rip
+\end_layout
+
+\end_inset
+
+ a proto je potřeba použít instrukci 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+lea
+\end_layout
+
+\end_inset
+
+.
+ Po vykonání systémového volání a naplánování tohoto procesu bude proces
+ pokračovat právě za instrukcí 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+sysenter
+\end_layout
+
+\end_inset
+
+.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Box Boxed
+position "t"
+hor_pos "c"
+has_inner_box 1
+inner_pos "t"
+use_parbox 0
+use_makebox 0
+width "100col%"
+special "none"
+height "1in"
+height_special "totalheight"
+status open
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+mov r13, 0x03
+\begin_inset space ~
+\end_inset
+
+ //syscall number (3 - pause)
+\begin_inset Newline newline
+\end_inset
+
+mov r15, rsp 
+\begin_inset space ~
+\end_inset
+
+
+\begin_inset space ~
+\end_inset
+
+//pass stack pointer to OS
+\begin_inset Newline newline
+\end_inset
+
+lea r14, [rip] //pass instruction pointer to OS
+\begin_inset Newline newline
+\end_inset
+
+sysenter
+\begin_inset Newline newline
+\end_inset
+
+//next instructions
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Seznam volání
+\end_layout
+
+\begin_layout Standard
+Tabulka 
+\begin_inset CommandInset ref
+LatexCommand ref
+reference "table:syscalls"
+
+\end_inset
+
+ obsahuje kompletní výpis dostupných systémových volání.
+ Hodnoty ve sloupci kód jsou čísla, které označují číslo služby, kterým
+ volající určuje, kterou službu chce vyvolat.
+ Názvy volání mají pouze informativní charakter.
+ Příznak přeplánování určuje, zda-li se na konci systémového volání spustí
+ plánovací procedura a tím pádem se dá výpočetní čas jinému procesu.
+ Systémová volání, která nepřeplánovávají navracejí výpočet do původního
+ procesu, ze kterého bylo volání zavoláno.
+ Speciální registry označují další parametry konkrétního systémového volání
+ (kromě povinných parametrů probraných na začátku kapitoly).
+\end_layout
+
+\begin_layout Standard
+\begin_inset Wrap table
+lines 0
+placement i
+overhang 0in
+width "100page%"
+status open
+
+\begin_layout Plain Layout
+\begin_inset Tabular
+<lyxtabular version="3" rows="6" columns="5">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top" width="45text%">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Kód
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Název
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Popis
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Přeplánuje
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Speciální registry
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+1
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+alloc
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Alokuje pro proces novou paměťovou stránku o velikosti 2 MB.
+ Virtuální adresa nové paměti je předána v registru 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r13
+\end_layout
+
+\end_inset
+
+.
+ V případě neúspěchu alokace je v návratovém registru hodnota 0.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ne
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+2
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+terminate
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ukončí uživatelský proces.
+ Vyčistí záznam v PCB a instance tohoto procesu již nebude nikdy plánována.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ano
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+3
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+pause
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pozastaví uživatelský proces a spustí přeplánování.
+ Pokud není žádný následující proces v kruhové frontě připravených procesů,
+ bude znovu spuštěn tento proces.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Ano
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+4
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+acquire
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Pokusí se získat vlastnictví mutexu.
+ V případě neúspěchu se proces zablokuje.
+ V případě úspěchu bude volající proces ihned naplánován.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r12
+\end_layout
+
+\end_inset
+
+ - číslo mutexu
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+5
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+release
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Odevzdá vlastnictví mutexu.
+ Jestliže ve frontě nečekají žádné další procesy, pokračuje volající proces.
+ Jinak pokračuje poslední z čekajících procesů.
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+-
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+r12
+\end_layout
+
+\end_inset
+
+ - číslo mutexu
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\begin_inset Caption Standard
+
+\begin_layout Plain Layout
+\begin_inset CommandInset label
+LatexCommand label
+name "table:syscalls"
+
+\end_inset
+
+Systémová volání
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Mutexy
+\end_layout
+
+\begin_layout Standard
+Systémová volání s kódy 5 a 6 dovolují získat resp.
+ odevzdat vlastnictví mutexu.
+ Mutexy jsou v našem OS abstrakcí sdílených prostředků.
+ Jelikož nemáme haldu pro jádro, používáme předem definovaný počet mutexů
+ a volající proces specifikuje, se kterým z mutexů chce pracovat.
+\end_layout
+
+\begin_layout Standard
+Po ukončení procesu přes systémové volání 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+terminate
+\end_layout
+
+\end_inset
+
+ jsou všechny mutexy procesu uvolněny.
+\end_layout
+
+\begin_layout Section
+Spuštění a testování
+\end_layout
+
+\begin_layout Standard
+Operační systém jsme testovali v prostředí 
+\emph on
+Qemu, 
+\emph default
+avšak měl by jít zavést přímo na reálný hardware.
+\end_layout
+
+\begin_layout Subsection
+Instalace závislostí
+\end_layout
+
+\begin_layout Standard
+Pro kompilaci jsou potřeba: překladač assembleru, zavaděč grub a konvertor
+ na souborový systém ISO 9660.
+\end_layout
+
+\begin_layout Standard
+Na linuxovém systému se správcem balíčků 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt
+\end_layout
+
+\end_inset
+
+ tyto závislosti nainstalujeme snadno a rychle za pomoci příkazu
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt install nasm grub-common xorriso qemu-system-x86
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Pokud používáme Ubuntu, ještě doinstalujeme binární zavaděč
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+apt-get install grub-pc-bin
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Systém je napsaný v Rustu a proto potřebujeme ještě překladač tohoto jazyka.
+ Vzhledem k tomu, že používáme některé nestandardní konstrukty, je potřeba
+ na překlad použít tzv.
+ noční sestavení Rustu.
+ Tuto verzi můžeme nejjednodušeji nainstalovat následujícími příkazy, nicméně
+ jsou potenciálně NEBEZPEČNÉ - doporučujeme je spouštět odděleně od produkčních
+ systémů.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+curl -f -L https://static.rust-lang.org/rustup.sh -O
+\begin_inset Newline newline
+\end_inset
+
+sh rustup.sh --channel=nightly
+\end_layout
+
+\end_inset
+
+
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+Toto noční sestavení lze samozřejmě nainstalovat i jinak, například překladem
+ ze zdrojových kódů.
+\end_layout
+
+\begin_layout Subsection
+Spuštění
+\end_layout
+
+\begin_layout Standard
+Vlastní přeložení a spuštění provedeme zadáním příkazu 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+make run
+\end_layout
+
+\end_inset
+
+ v adresáři s operačním systémem.
+\end_layout
+
+\begin_layout Section
+Bezpečnost
+\end_layout
+
+\begin_layout Standard
+V následující kapitole na náš operační systém nahlédneme po stránce bezpečnosti.
+ Vzhledem k tomu, že se jedná o čistě výukový operační systém, neimplementovali
+ jsme všechna bezpečnostní opatření.
+ Nicméně jsme si několika 
+\emph on
+situací
+\emph default
+ vědomi.
+\end_layout
+
+\begin_layout Subsection
+Přetečení uživatelského zásobníku
+\end_layout
+
+\begin_layout Standard
+Díky stránkování a označování paměti jako nepřístupné z neprivilegovaného
+ režimu, přetečení uživatelského zásobníku skončí výpadkem stránky.
+ Uživatelský zásobník začíná na konci první alokované stránky (virtuální
+ adresa 66 MB) a 
+\emph on
+roste 
+\emph default
+až k 64.
+ MB virtuální adresy.
+ Při přetečení by přetečení chtěl přistoupit do paměti jádra, což korektně
+ skončí výjimkou.
+\end_layout
+
+\begin_layout Subsection
+Přetečení jaderného zásobníku
+\end_layout
+
+\begin_layout Standard
+V jádře je ovšem situace jiná a tzv.
+ 
+\emph on
+guard page
+\emph default
+ nebyla implementována.
+ Jádro tedy není schopno detekovat přetečení vlastního zásobníku.
+ Avšak jaderný zásobník není nijak hojně
+\end_layout
+
+\begin_layout Standard
+využívaný a má vyhrazený dostatečný prostor.
+\end_layout
+
+\begin_layout Subsection
+Izolace programů
+\end_layout
+
+\begin_layout Standard
+Programy mají oddělené datové prostory, nemohou si tedy číst ani přepisovat
+ daty.
+\end_layout
+
+\begin_layout Standard
+Současná implementace kopíruje začátek programového kódu, o konstantní velikosti
+, do adresního prostoru programu.
+ Program tedy může přistoupit na kód, který se ve fyzické paměti nachází
+ za jeho kódem.
+ Teoreticky tedy může číst kopii dat následujícího programu.
+\end_layout
+
+\begin_layout Subsection
+Podvrhnutí ukazatele na zásobník při systémovém volání
+\end_layout
+
+\begin_layout Standard
+Jedná se asi o největší zranitelnost tohoto operačního systému.
+ Program může, při systémovém volání, podvrhnout 
+\emph on
+svoji
+\emph default
+ adresu vrcholku zásobníku.
+ Jádro na tuto adresu ukládá registry programu.
+ Pokud program podvrhne tuto adresu, může dostat obsah svých registrů na
+ libovolné místo v paměti jádra.
+ Může tedy například přepsat část kódu tak, aby se zavolala procedura programu
+ v privilegovaném režimu.
+ Proti tomuto útoku by se samozřejmě dalo zabránit kontrolováním předávané
+ adresy zásobníku.
+ 
+\end_layout
+
+\begin_layout Section
+Závěr
+\end_layout
+
+\begin_layout Standard
+V rámci semestrální práce se nám povedlo vytvořit jednoduchý operační systém
+ obsahující některé ze základních funkcionalit operačního systému.
+ Implementovali jsme základní funkcionalitu jako obsluhu přerušení, některá
+ základní systémová volání (alokace paměti, mutexy) a přepínání mezi procesy.
+ Do opravdového nasazení má tento systém opravdu daleko, ale to by byla,
+ myslíme si, záležitost na více než jednu semestrální práci.
+ V průběhu práce jsme se seznámili se základní syntaxí jazyku Rust a fungováním
+ architektury x86-64.
+\end_layout
+
+\end_body
+\end_document
