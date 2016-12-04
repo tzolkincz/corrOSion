@@ -101,7 +101,25 @@ Jiří Láska, Václav Löffelmann
 \end_layout
 
 \begin_layout Standard
-Bylo nebylo, měření se nám velice líbilo (jako v elabech na střední :) )
+V našem týmu jsme si vybrali zadání číslo 4.
+ Cílem tohoto zadání je vytvořit jednoduchý operační systém.
+ Rozhodli jsme se, že tento náš výukový operační systém napíšeme v jazyku
+ Rust a pojmenujeme ho corrOSion.
+\end_layout
+
+\begin_layout Standard
+Abychom se vyhnuli vyčítání manuálů k procesorům, základní nízkoúrovňové
+ inicializace jsme převzali z blogu Phillippa Oppermanna
+\begin_inset Foot
+status open
+
+\begin_layout Plain Layout
+http://os.phil-opp.com/
+\end_layout
+
+\end_inset
+
+.
 \end_layout
 
 \begin_layout Section
