@@ -32,6 +32,11 @@ pub extern "C" fn main() -> u8 {
         user::sysenter();*/
 
         asm!("
+            call test // mimicking user::terminate_process() call and here it works
+            test:
+            push rbp
+            mov rsp, rbp
+
             mov r13, 2
             mov r15, rsp    //pass stack pointer to OS
             lea r14, [rip]  //pass instruction pointer to OS
