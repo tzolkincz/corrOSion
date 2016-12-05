@@ -51,6 +51,9 @@ pub fn handle_syscall(pid: u32) {
         5 => {
             handle_release(pid);
         }
+        6 => {
+            handle_putc(pid);
+        }
         _ => {
             // process::dispatch_on(pid);
             ..::easy_print_line(1, "Unknown syscall", 0x4f);
@@ -115,13 +118,15 @@ pub fn handle_pause(pid: u32) {
 }
 
 #[allow(unused_mut)]
-unsafe fn get_mutex_id() -> usize {
+fn get_mutex_id() -> usize {
     let mut mutex_id: usize;
     // get mutex id
-    asm!("nop"
-        :"={r12}"(mutex_id)
-        ::: "intel", "volatile"
-    );
+    unsafe {
+        asm!("nop"
+            :"={r12}"(mutex_id)
+            ::: "intel", "volatile"
+        );
+    }
     return mutex_id;
 }
 
@@ -133,9 +138,8 @@ pub fn handle_acquire(pid: u32) {
         scheduler::spinkacek();
     }
 
+    let mutex_id = get_mutex_id();
     unsafe {
-        let mutex_id = get_mutex_id();
-
         if MUTEX_TABLE[mutex_id].acquired == true && MUTEX_TABLE[mutex_id].by == pid {
             process::dispatch_on(pid);
         } else if MUTEX_TABLE[mutex_id].acquired == false {
@@ -172,4 +176,26 @@ pub fn handle_release(pid: u32) {
             process::dispatch_on(pid_w);
         }
     }
+}
+
+#[allow(unused_mut)]
+fn get_char_to_print() -> (u8, char) {
+    let mut val: usize;
+    // get mutex id
+    unsafe {
+        asm!("nop"
+            :"={r12}"(val)
+            ::: "intel", "volatile"
+        );
+    }
+    let attr = (val >> 8 & 0xFF) as u8;
+    let ch = (val & 0xFF) as u8 as char;
+    return (attr, ch);
+}
+
+pub fn handle_putc(pid: u32) {
+    let ac = get_char_to_print();
+    ..::putc(ac);
+    // return to program
+    process::dispatch_on(pid);
 }
