@@ -35,6 +35,13 @@ pub extern "C" fn main() -> u8 {
             lea r14, [rip]  //pass instruction pointer to OS
             sysenter
 
+            // print
+            mov r13, 0x06   //syscall number (3 - pause)
+            mov r12, 0x1f40 // color and '@'
+            mov r15, rsp    //pass stack pointer to OS
+            lea r14, [rip]  //pass instruction pointer to OS
+            sysenter
+
             //pause process
             mov r13, 0x03   //syscall number (3 - pause)
             mov r15, rsp    //pass stack pointer to OS
