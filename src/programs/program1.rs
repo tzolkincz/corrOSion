@@ -1,65 +1,46 @@
-
+use programs::user;
 
 #[no_mangle]
 #[allow(unreachable_code)]
 pub extern "C" fn main() -> u8 {
     unsafe {
-        asm!("
+        /*asm!("
             mov r10, 0x12345 //test register preservation
+            "::::"intel", "volatile");
 
-
-            mov r13, 0x01   //syscall number (1 - alloc)
-            //mov rsi, rsp  //rsi a rdi have some issues (no_mandle is not working? (@TODO))
-            //lea rdi, [rip]
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            //ACHTUNG! must be last instruction befor syscall
-            //(or just r14 must point to sysenter)
-            sysenter
-
-
+        let addr = user::alloc();
+        asm!("
             mov eax, 0x001
             mov [r13], eax //test memory allocation
+            "::"{r13}"(addr)::"intel", "volatile");*/
 
+        //user::acquire_resource(0);
 
-            //acquire mutex
-            mov r13, 0x04   //syscall number (4 - acquire mutex)
-            mov r12, 0x00   //mutex id
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            sysenter
+        //user::yield_process();
 
-            //pause process
-            mov r13, 0x03   //syscall number (3 - pause)
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            sysenter
+        //user::putc((0x1f, '@'));
 
-            //pause process
-            mov r13, 0x03   //syscall number (3 - pause)
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            sysenter
+        //user::yield_process();
 
-            //release mutex
-            mov r13, 0x05   //syscall number (5 - release mutex)
-            mov r12, 0x00   //mutex id
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            sysenter
+        //user::release_resource(0);
 
-            //pause process
-            mov r13, 0x03   //syscall number (3 - pause)
-            mov r15, rsp    //pass stack pointer to OS
-            lea r14, [rip]  //pass instruction pointer to OS
-            sysenter
+        //user::yield_process();
 
-            //terminate process
+        /*asm!("
             mov r13, 0x02   //syscall number (2 - terminate)
+            "::::"intel", "volatile");
+        user::sysenter();*/
+
+        asm!("
+            mov r13, 2
             mov r15, rsp    //pass stack pointer to OS
             lea r14, [rip]  //pass instruction pointer to OS
             sysenter
+            "::::"intel", "volatile");
 
+        user::terminate_process();
+
+        asm!("
             hlt //this will be never called
             "::::"intel", "volatile");
 
