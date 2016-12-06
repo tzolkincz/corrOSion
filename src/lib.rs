@@ -51,6 +51,8 @@ pub unsafe extern "C" fn kint_zero() -> ! {
        pop rax" :::: "intel");
 
     asm!("iretq" :::: "intel");
+
+    panic!();
 }
 
 #[no_mangle]

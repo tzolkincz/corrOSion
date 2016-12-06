@@ -226,6 +226,8 @@ pub fn dispatch_on(pid: u32) -> ! {
              "{rdx}"(PCBS[pid as usize].eip)
             :: "intel", "volatile"
         );
+
+        panic!();
     }
 }
 
