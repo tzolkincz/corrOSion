@@ -123,10 +123,6 @@ pub extern "C" fn kmain() -> ! {
     process::create_process(0);
     process::create_process(1);
     scheduler::reschedule();
-
-
-    easy_print_line(0, "kmain !", 0x2f);
-    loop {}
 }
 
 
