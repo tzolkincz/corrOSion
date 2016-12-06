@@ -171,12 +171,6 @@ pub fn dispatch_on(pid: u32) -> ! {
         KCB.page_table_addr = memory::get_current_page_table_addr();
 
         asm!("
-            //save current (kernel) stack
-            mov ecx, 0x175 // writes kernel ESP to model specific registers
-            mov edx, 0
-            mov eax, esp // do not erase kernel stack on interrupt
-            wrmsr
-
             mov cr3, rbx //set page table addr
             "
             ::
