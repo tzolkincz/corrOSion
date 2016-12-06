@@ -1,4 +1,4 @@
-#LyX 2.1 created this file. For more info see http://www.lyx.org/
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
 \lyxformat 474
 \begin_document
 \begin_header
@@ -104,7 +104,11 @@ Jiří Láska, Václav Löffelmann
 V našem týmu jsme si vybrali zadání číslo 4.
  Cílem tohoto zadání je vytvořit jednoduchý operační systém.
  Rozhodli jsme se, že tento náš výukový operační systém napíšeme v jazyku
- Rust a pojmenujeme ho corrOSion.
+ Rust a
+\begin_inset space ~
+\end_inset
+
+pojmenujeme ho corrOSion.
 \end_layout
 
 \begin_layout Standard
@@ -245,14 +249,14 @@ reference "fig:Schéma-fyzického-rozdělení"
 \begin_inset Wrap figure
 lines 0
 placement o
-overhang 0col%
-width "50col%"
-status collapsed
+overhang 0in
+width "80col%"
+status open
 
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename memory_mgmt.svg
-	width 50text%
+	width 80text%
 
 \end_inset
 
@@ -281,10 +285,6 @@ Schéma fyzického rozdělení paměti
 
 \begin_layout Section
 Procesy
-\end_layout
-
-\begin_layout Subsection
-Spouštění
 \end_layout
 
 \begin_layout Subsection
@@ -337,8 +337,11 @@ Running
 \end_inset
 
 .
- Jestliže je proces připravený a plánovatelný, ale zrovna neběží má stav
- 
+ Jestliže je proces připravený a
+\begin_inset space ~
+\end_inset
+
+plánovatelný, ale zrovna neběží má stav 
 \begin_inset Flex Code
 status open
 
@@ -377,7 +380,11 @@ APT
  Z těchto programů se pak vytvářejí jedna k jedné jejich instance - procesy.
  Z jednoho programu tedy může v jednu chvíli existovat v systému pouze jedna
  instance.
- Toto omezení jsme zavedli z důvodu zjednodušení.
+ Toto omezení jsme zavedli z
+\begin_inset space ~
+\end_inset
+
+důvodu zjednodušení.
 \end_layout
 
 \begin_layout Section
@@ -619,17 +626,58 @@ reference "table:syscalls"
 \end_layout
 
 \begin_layout Standard
+\begin_inset Newpage clearpage
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Mutexy
+\end_layout
+
+\begin_layout Standard
+Systémová volání s kódy 5 a 6 dovolují získat resp.
+ odevzdat vlastnictví mutexu.
+ Mutexy jsou v
+\begin_inset space ~
+\end_inset
+
+našem OS abstrakcí sdílených prostředků.
+ Jelikož nemáme haldu pro jádro, používáme předem definovaný počet mutexů
+ a volající proces specifikuje, se kterým z mutexů chce pracovat.
+\end_layout
+
+\begin_layout Standard
+Po ukončení procesu přes systémové volání 
+\begin_inset Flex Code
+status open
+
+\begin_layout Plain Layout
+terminate
+\end_layout
+
+\end_inset
+
+ jsou všechny mutexy procesu uvolněny.
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
 \begin_inset Wrap table
 lines 0
-placement i
+placement o
 overhang 0in
 width "100page%"
-status open
+status collapsed
 
 \begin_layout Plain Layout
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="5">
-<features rotate="0" tabularvalignment="middle">
+<features tabularvalignment="middle">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top" width="45text%">
@@ -1103,32 +1151,6 @@ Systémová volání
 
 \end_layout
 
-\begin_layout Subsection
-Mutexy
-\end_layout
-
-\begin_layout Standard
-Systémová volání s kódy 5 a 6 dovolují získat resp.
- odevzdat vlastnictví mutexu.
- Mutexy jsou v našem OS abstrakcí sdílených prostředků.
- Jelikož nemáme haldu pro jádro, používáme předem definovaný počet mutexů
- a volající proces specifikuje, se kterým z mutexů chce pracovat.
-\end_layout
-
-\begin_layout Standard
-Po ukončení procesu přes systémové volání 
-\begin_inset Flex Code
-status open
-
-\begin_layout Plain Layout
-terminate
-\end_layout
-
-\end_inset
-
- jsou všechny mutexy procesu uvolněny.
-\end_layout
-
 \begin_layout Section
 Spuštění a testování
 \end_layout
@@ -1212,8 +1234,12 @@ apt-get install grub-pc-bin
 
 \begin_layout Standard
 Systém je napsaný v Rustu a proto potřebujeme ještě překladač tohoto jazyka.
- Vzhledem k tomu, že používáme některé nestandardní konstrukty, je potřeba
- na překlad použít tzv.
+ Vzhledem k
+\begin_inset space ~
+\end_inset
+
+tomu, že používáme některé nestandardní konstrukty, je potřeba na překlad
+ použít tzv.
  noční sestavení Rustu.
  Tuto verzi můžeme nejjednodušeji nainstalovat následujícími příkazy, nicméně
  jsou potenciálně NEBEZPEČNÉ - doporučujeme je spouštět odděleně od produkčních
@@ -1274,8 +1300,12 @@ Bezpečnost
 
 \begin_layout Standard
 V následující kapitole na náš operační systém nahlédneme po stránce bezpečnosti.
- Vzhledem k tomu, že se jedná o čistě výukový operační systém, neimplementovali
- jsme všechna bezpečnostní opatření.
+ Vzhledem k
+\begin_inset space ~
+\end_inset
+
+tomu, že se jedná o čistě výukový operační systém, neimplementovali jsme
+ všechna bezpečnostní opatření.
  Nicméně jsme si několika 
 \emph on
 situací
