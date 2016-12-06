@@ -25,7 +25,7 @@ pub use programs::program2; //export for linker
 #[no_mangle]
 #[naked]
 #[cfg(target_arch = "x86_64")]  // ??? -- seen in Redox OS
-pub unsafe extern "C" fn kint_zero() {
+pub unsafe extern "C" fn kint_zero() -> ! {
     asm!("
        push rax
        push rcx
@@ -54,7 +54,7 @@ pub unsafe extern "C" fn kint_zero() {
 }
 
 #[no_mangle]
-pub extern "C" fn kentry() {
+pub extern "C" fn kentry() -> ! {
     // easy_print_line(24, "kentry .", 0x4f);
     update_status_line();
 
@@ -70,7 +70,7 @@ pub extern "C" fn kentry() {
 }
 
 #[no_mangle]
-pub extern "C" fn kmain() {
+pub extern "C" fn kmain() -> ! {
     // ATTENTION: we have a very small stack and no guard page
     erase_whole_screen();
     set_logo();

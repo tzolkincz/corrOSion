@@ -3,7 +3,7 @@ use process;
 
 
 // round robin scheduling
-pub fn reschedule() {
+pub fn reschedule() -> ! {
     unsafe {
         let start = process::get_process_iterator_start();
         for i in start..(process::MAX_PROCESS_COUNT * 2) {

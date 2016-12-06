@@ -24,7 +24,7 @@ static mut MUTEX_TABLE: [MutexEntry; MUTEX_COUNT] = [MutexEntry {
 #[no_mangle]
 #[inline(always)]
 #[allow(private_no_mangle_fns)]
-pub fn handle_syscall(pid: u32) {
+pub fn handle_syscall(pid: u32) -> ! {
 
 
     let syscall_number: u64;
@@ -64,7 +64,7 @@ pub fn handle_syscall(pid: u32) {
 
 
 // allocate memory for process and set return addr to r13 register
-pub fn handle_alloc(pid: u32) {
+pub fn handle_alloc(pid: u32) -> ! {
 
     let addr = memory::alloc(pid);
     unsafe {
@@ -79,7 +79,7 @@ pub fn handle_alloc(pid: u32) {
 }
 
 
-pub fn handle_terminate(pid: u32) {
+pub fn handle_terminate(pid: u32) -> ! {
     unsafe {
         ..::easy_print_line(14, "  handle terminate", 0xf3);
         *((0xb8000 + 160 * 14) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
@@ -107,7 +107,7 @@ pub fn handle_terminate(pid: u32) {
 }
 
 
-pub fn handle_pause(pid: u32) {
+pub fn handle_pause(pid: u32) -> ! {
     unsafe {
         ..::easy_print_line(15, "  handle pause", 0xf3);
         *((0xb8000 + 160 * 15) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
@@ -131,7 +131,7 @@ fn get_mutex_id() -> usize {
 }
 
 
-pub fn handle_acquire(pid: u32) {
+pub fn handle_acquire(pid: u32) -> ! {
     unsafe {
         ..::easy_print_line(16, "  handle acquire", 0xf3);
         *((0xb8000 + 160 * 16) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
@@ -155,7 +155,7 @@ pub fn handle_acquire(pid: u32) {
     }
 }
 
-pub fn handle_release(pid: u32) {
+pub fn handle_release(pid: u32) -> ! {
     unsafe {
         ..::easy_print_line(16, "  handle release", 0xf3);
         *((0xb8000 + 160 * 16) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
@@ -193,7 +193,7 @@ fn get_char_to_print() -> (u8, char) {
     return (attr, ch);
 }
 
-pub fn handle_putc(pid: u32) {
+pub fn handle_putc(pid: u32) -> ! {
     let ac = get_char_to_print();
     ..::putc(ac);
     // return to program

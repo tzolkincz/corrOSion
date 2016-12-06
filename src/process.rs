@@ -142,7 +142,7 @@ pub fn create_process(id: u32) {
 #[no_mangle]
 #[inline(always)]
 #[allow(private_no_mangle_fns)]
-pub fn dispatch_on(pid: u32) {
+pub fn dispatch_on(pid: u32) -> ! {
     if DEBUG_OUTPUT {
         unsafe {
             ..::easy_print_line(PROCESS_DEBUG_OUTPUT_LINE, "  dispatching.", 0xa1);
