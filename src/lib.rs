@@ -73,6 +73,7 @@ pub extern "C" fn kentry() {
 pub extern "C" fn kmain() {
     // ATTENTION: we have a very small stack and no guard page
     erase_whole_screen();
+    set_logo();
     update_status_line();
     easy_print_line(0, "kmain .", 0x4f);
 
@@ -89,36 +90,36 @@ pub extern "C" fn kmain() {
         *((0xb8000 + 160 * 1) as *mut _) = [gdt64_kcode as u8 + '0' as u8, 0x1f as u8];
     }
 
-    /*putc((0x1f, 'a'));
-    putc((0x1f, 'h'));
-    putc((0x1f, 'o'));
-    putc((0x1f, 'j'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));
-    putc((0x1f, 'a'));
-    putc((0x1f, '\t'));
-    putc((0x1f, 'h'));
-    putc((0x1f, '\t'));
-    putc((0x1f, 'o'));
-    putc((0x1f, '\t'));
-    putc((0x1f, 'j'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\r'));
-    putc((0x1f, 'a'));
-    putc((0x1f, 'h'));
-    putc((0x1f, 'o'));
-    putc((0x1f, 'j'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));
-    putc((0x1f, '\n'));*/
+    // putc((0x1f, 'a'));
+    // putc((0x1f, 'h'));
+    // putc((0x1f, 'o'));
+    // putc((0x1f, 'j'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, 'a'));
+    // putc((0x1f, '\t'));
+    // putc((0x1f, 'h'));
+    // putc((0x1f, '\t'));
+    // putc((0x1f, 'o'));
+    // putc((0x1f, '\t'));
+    // putc((0x1f, 'j'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\r'));
+    // putc((0x1f, 'a'));
+    // putc((0x1f, 'h'));
+    // putc((0x1f, 'o'));
+    // putc((0x1f, 'j'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
+    // putc((0x1f, '\n'));
 
 
     process::load_apt();
-    process::create_prcess(0);
-    process::create_prcess(1);
+    process::create_process(0);
+    process::create_process(1);
     scheduler::reschedule();
 
 
@@ -172,39 +173,56 @@ pub static mut CURSOR: (u8, u8) = (0, 0);
 pub fn putc(ac: (u8, char)) {
     let (_, character) = ac;
     unsafe {
-    let (row, col) = CURSOR;
-    if character == '\t' {
-        CURSOR = (row, col+TAB_SIZE);
-        if col+TAB_SIZE >= COLS {
-            putc((0,'\n'));
-            let (row, _) = CURSOR;
-            CURSOR = (row, col+TAB_SIZE-COLS);
+        let (row, col) = CURSOR;
+        if character == '\t' {
+            CURSOR = (row, col + TAB_SIZE);
+            if col + TAB_SIZE >= COLS {
+                putc((0, '\n'));
+                let (row, _) = CURSOR;
+                CURSOR = (row, col + TAB_SIZE - COLS);
+            }
+        } else if character == '\r' {
+            CURSOR = (row, 0)
+        } else if character == '\n' {
+            CURSOR = (row + 1, col);
+            if row + 1 == ROWS - 1 {
+                CURSOR = (0, col) // Skip kernel status line
+            }
+        } else {
+            set_attr_char(ac, CURSOR);
+            CURSOR = (row, col + 1); // Shift to the right
+            if col + 1 == COLS {
+                // Wrap line
+                putc((0, '\n'));
+                putc((0, '\r'));
+            }
         }
-    } else if character == '\r' {
-        CURSOR = (row, 0)
-    } else if character == '\n' {
-        CURSOR = (row+1, col);
-        if row+1 == ROWS-1 {
-            CURSOR = (0, col) // Skip kernel status line
-        }
-    } else {
-        set_attr_char(ac, CURSOR);
-        CURSOR = (row, col+1); // Shift to the right
-        if col+1 == COLS {
-            // Wrap line
-            putc((0,'\n'));
-            putc((0,'\r'));
-        }
-    }
     }
 }
 
-pub static mut STATUS_LINE: [(u8, char); COLS as usize] = [(0x4e, ' '); COLS as usize];
+pub static mut STATUS_LINE: [(u8, char); COLS as usize] = [(0x70, '#'); COLS as usize];
 pub fn update_status_line() {
     unsafe {
         for col in 0..COLS {
             set_attr_char(STATUS_LINE[col as usize], (24, col));
         }
+    }
+}
+
+pub fn set_logo() {
+    let bg = 0xf0;
+    let red = 0x0C;
+    let blue = 0x09;
+    unsafe {
+        STATUS_LINE[(COLS - 9) as usize] = (bg|blue, 'c');
+        STATUS_LINE[(COLS - 8) as usize] = (bg|blue, 'o');
+        STATUS_LINE[(COLS - 7) as usize] = (bg|blue, 'r');
+        STATUS_LINE[(COLS - 6) as usize] = (bg|blue, 'r');
+        STATUS_LINE[(COLS - 5) as usize] = (bg|red, 'O');
+        STATUS_LINE[(COLS - 4) as usize] = (bg|red, 'S');
+        STATUS_LINE[(COLS - 3) as usize] = (bg|blue, 'i');
+        STATUS_LINE[(COLS - 2) as usize] = (bg|blue, 'o');
+        STATUS_LINE[(COLS - 1) as usize] = (bg|blue, 'n');
     }
 }
 

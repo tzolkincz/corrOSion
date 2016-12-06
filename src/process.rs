@@ -112,7 +112,7 @@ pub fn load_apt() {
 }
 
 
-pub fn create_prcess(id: u32) {
+pub fn create_process(id: u32) {
 
     unsafe {
         let super_dir = memory::init_super_dir_table(id);
@@ -150,7 +150,7 @@ pub fn dispatch_on(pid: u32) {
                                                                         0xc8 as u8];
             PROCESS_DEBUG_OUTPUT_LINE += 1;
             use scheduler;
-            scheduler::spinkacek();
+            scheduler::_test_delay();
         }
     }
 
@@ -295,7 +295,7 @@ pub fn terminate(pid: u32) {
                                                                         0xc8 as u8];
             PROCESS_DEBUG_OUTPUT_LINE += 1;
             use scheduler;
-            scheduler::spinkacek();
+            scheduler::_test_delay();
         }
     }
 

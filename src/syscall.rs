@@ -83,7 +83,7 @@ pub fn handle_terminate(pid: u32) {
     unsafe {
         ..::easy_print_line(14, "  handle terminate", 0xf3);
         *((0xb8000 + 160 * 14) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
-        scheduler::spinkacek();
+        scheduler::_test_delay();
     }
 
     // release all mutexes
@@ -111,7 +111,7 @@ pub fn handle_pause(pid: u32) {
     unsafe {
         ..::easy_print_line(15, "  handle pause", 0xf3);
         *((0xb8000 + 160 * 15) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
-        scheduler::spinkacek();
+        scheduler::_test_delay();
     }
 
     scheduler::reschedule();
@@ -135,7 +135,7 @@ pub fn handle_acquire(pid: u32) {
     unsafe {
         ..::easy_print_line(16, "  handle acquire", 0xf3);
         *((0xb8000 + 160 * 16) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
-        scheduler::spinkacek();
+        scheduler::_test_delay();
     }
 
     let mutex_id = get_mutex_id();
@@ -159,7 +159,7 @@ pub fn handle_release(pid: u32) {
     unsafe {
         ..::easy_print_line(16, "  handle release", 0xf3);
         *((0xb8000 + 160 * 16) as *mut _) = [pid as u8 + '0' as u8, 0x1f as u8];
-        scheduler::spinkacek();
+        scheduler::_test_delay();
     }
 
     unsafe {
