@@ -118,7 +118,6 @@ pub extern "C" fn kmain() -> ! {
     // putc((0x1f, '\n'));
     // putc((0x1f, '\n'));
 
-
     process::load_apt();
     process::create_process(0);
     process::create_process(1);
@@ -212,15 +211,15 @@ pub fn set_logo() {
     let red = 0x0C;
     let blue = 0x09;
     unsafe {
-        STATUS_LINE[(COLS - 9) as usize] = (bg|blue, 'c');
-        STATUS_LINE[(COLS - 8) as usize] = (bg|blue, 'o');
-        STATUS_LINE[(COLS - 7) as usize] = (bg|blue, 'r');
-        STATUS_LINE[(COLS - 6) as usize] = (bg|blue, 'r');
-        STATUS_LINE[(COLS - 5) as usize] = (bg|red, 'O');
-        STATUS_LINE[(COLS - 4) as usize] = (bg|red, 'S');
-        STATUS_LINE[(COLS - 3) as usize] = (bg|blue, 'i');
-        STATUS_LINE[(COLS - 2) as usize] = (bg|blue, 'o');
-        STATUS_LINE[(COLS - 1) as usize] = (bg|blue, 'n');
+        STATUS_LINE[(COLS - 9) as usize] = (bg | blue, 'c');
+        STATUS_LINE[(COLS - 8) as usize] = (bg | blue, 'o');
+        STATUS_LINE[(COLS - 7) as usize] = (bg | blue, 'r');
+        STATUS_LINE[(COLS - 6) as usize] = (bg | blue, 'r');
+        STATUS_LINE[(COLS - 5) as usize] = (bg | red, 'O');
+        STATUS_LINE[(COLS - 4) as usize] = (bg | red, 'S');
+        STATUS_LINE[(COLS - 3) as usize] = (bg | blue, 'i');
+        STATUS_LINE[(COLS - 2) as usize] = (bg | blue, 'o');
+        STATUS_LINE[(COLS - 1) as usize] = (bg | blue, 'n');
     }
 }
 
@@ -231,11 +230,36 @@ extern "C" fn eh_personality() {}
 #[cfg(not(test))]
 #[lang = "panic_fmt"]
 extern "C" fn panic_fmt() -> ! {
-    loop {}
+    let bg = 0x40;
+    let red = 0x0f;
+    unsafe {
+        STATUS_LINE[0] = (bg | red, 'P');
+        STATUS_LINE[1] = (bg | red, 'A');
+        STATUS_LINE[2] = (bg | red, 'N');
+        STATUS_LINE[3] = (bg | red, 'I');
+        STATUS_LINE[4] = (bg | red, 'C');
+        update_status_line(); // Can we use stack?
+        loop {
+            asm!("hlt":::: "intel", "volatile");
+        }
+    }
 }
 
 #[allow(non_snake_case)]
 #[no_mangle]
 pub extern "C" fn _Unwind_Resume() -> ! {
-    loop {}
+    let bg = 0x40;
+    let red = 0x0f;
+    unsafe {
+        STATUS_LINE[0] = (bg | red, 'U');
+        STATUS_LINE[1] = (bg | red, 'N');
+        STATUS_LINE[2] = (bg | red, 'W');
+        STATUS_LINE[3] = (bg | red, 'I');
+        STATUS_LINE[4] = (bg | red, 'N');
+        STATUS_LINE[5] = (bg | red, 'D');
+        update_status_line(); // Can we use stack?
+        loop {
+            asm!("hlt":::: "intel", "volatile");
+        }
+    }
 }
