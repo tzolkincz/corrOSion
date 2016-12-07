@@ -1,4 +1,4 @@
-#LyX 2.1 created this file. For more info see http://www.lyx.org/
+#LyX 2.2 created this file. For more info see http://www.lyx.org/
 \lyxformat 474
 \begin_document
 \begin_header
@@ -677,7 +677,7 @@ status collapsed
 \begin_layout Plain Layout
 \begin_inset Tabular
 <lyxtabular version="3" rows="7" columns="5">
-<features rotate="0" tabularvalignment="middle">
+<features tabularvalignment="middle">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top">
 <column alignment="center" valignment="top" width="45text%">
@@ -1156,7 +1156,7 @@ Běh operačního systému
 \end_layout
 
 \begin_layout Standard
-Pro lepší zorientování ve zdrojovém kódu, předkládáme diagram
+Pro lepší zorientování ve zdrojovém kódu, předkládáme diagram 
 \begin_inset CommandInset ref
 LatexCommand ref
 reference "fig:Jednoduchý-běh"
@@ -1203,6 +1203,7 @@ status open
 \begin_layout Plain Layout
 \begin_inset Graphics
 	filename corrOSion_flow.svg
+	width 100text%
 
 \end_inset
 
