@@ -1,5 +1,7 @@
 # corrOSion
 
+Simple OS for x86_64 written in Rust
+
 ## Run
 Make sure you have installed all dependencies. Then you can simply run
 ```
@@ -26,3 +28,7 @@ sh rustup.sh --channel=nightly
 
 #### Ubuntu specific dependencies
 ```apt-get install grub-pc-bin```
+
+
+### Licence
+WTFPL
